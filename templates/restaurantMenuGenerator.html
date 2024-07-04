@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Restaurant Menu Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 50%;
+            margin: auto;
+            overflow: hidden;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            margin-top: 50px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin: 10px 0 5px;
+            color: #555;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        input[type="submit"] {
+            background: #28a745;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="submit"]:hover {
+            background: #218838;
+        }
+        h2 {
+            color: #333;
+        }
+        p {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .button {
+            background: #007bff;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Restaurant Menu Generator</h1>
+        <form method="post">
+            <label for="prompt">Enter your prompt:</label>
+            <input type="text" id="prompt" name="prompt" value="{{ prompt }}">
+            
+            <label for="dietary_restrictions">Dietary Restrictions:</label>
+            <input type="text" id="dietary_restrictions" name="dietary_restrictions">
+            
+            <label for="eating_habits">Eating Habits:</label>
+            <input type="text" id="eating_habits" name="eating_habits">
+            
+            <label for="budget">Budget:</label>
+            <input type="text" id="budget" name="budget">
+            
+            <input type="submit" value="Generate Menu">
+        </form>
+        
+        <h2>Generated Menu:</h2>
+        <p>{{ menu }}</p>
+        
+        <h2>Generate Random Recipe:</h2>
+        <button class="button" onclick="fetchRandomRecipe()">Get Random Recipe</button>
+        <p id="random-recipe"></p>
+    </div>
+
+    <script>
+        function fetchRandomRecipe() {
+            fetch('/generate_random_recipe')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('random-recipe').innerText = data;
+                });
+        }
+    </script>
+</body>
+</html>
