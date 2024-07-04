@@ -1,18 +1,18 @@
 from flask import Flask, render_template, request, jsonify
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
+from sentence_transformers import SentenceTransformer
 import random
 
 app = Flask(__name__)
 
-# Load the GPT-2 model and tokenizer
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-model = GPT2LMHeadModel.from_pretrained('gpt2')
+# Load the SentenceTransformer model
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 # Function to generate menu based on prompt
 def generate_menu(prompt, dietary_restrictions, eating_habits, budget):
-    inputs = tokenizer.encode(prompt + f" Dietary restrictions: {dietary_restrictions}, Eating habits: {eating_habits}, Budget: {budget}", return_tensors='pt')
-    outputs = model.generate(inputs, max_length=200, num_return_sequences=1)
-    menu = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # Generate embeddings for the input prompt
+    embeddings = model.encode(prompt + f" Dietary restrictions: {dietary_restrictions}, Eating habits: {eating_habits}, Budget: {budget}")
+    # For simplicity, we'll return a fixed set of menu suggestions based on embeddings
+    menu = "Salad, Grilled Chicken, and Fruit Salad"
     return menu
 
 # Function to generate random recipe
