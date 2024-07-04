@@ -4,14 +4,12 @@ import random
 
 app = Flask(__name__)
 
-# Load the SentenceTransformer model
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-# Function to generate menu based on prompt
+#func generate menu
 def generate_menu(prompt, dietary_restrictions, eating_habits, budget):
-    # Generate embeddings for the input prompt
     embeddings = model.encode(prompt + f" Dietary restrictions: {dietary_restrictions}, Eating habits: {eating_habits}, Budget: {budget}")
-    # For simplicity, we'll return a fixed set of menu suggestions based on embeddings
+    # a fixed set of menu suggestion
     menu = "Salad, Grilled Chicken, and Fruit Salad"
     return menu
 
