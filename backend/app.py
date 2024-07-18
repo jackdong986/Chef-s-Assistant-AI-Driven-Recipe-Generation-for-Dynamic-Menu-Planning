@@ -1,25 +1,41 @@
 from flask import Flask, render_template, request, jsonify
-from sentence_transformers import SentenceTransformer
 import random
+import torch
+from sentence_transformers import SentenceTransformer
+import numpy as np
+import pandas as pd 
+import os
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='../ui')
 
+# Initialize the SentenceTransformer model
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-#func generate menu
-def generate_menu(prompt, dietary_restrictions, eating_habits, budget):
-    embeddings = model.encode(prompt + f" Dietary restrictions: {dietary_restrictions}, Eating habits: {eating_habits}, Budget: {budget}")
-    # a fixed set of menu suggestion
-    menu = "Salad, Grilled Chicken, and Fruit Salad"
-    return menu
+# Load saved embeddings and DataFrame
+try:
+    recipe_embeddings_path = os.path.join(os.path.dirname(__file__), 'backend', 'recipe_embeddings.npy')
+    recipe_embeddings = torch.tensor(np.load(recipe_embeddings_path))
+    
+    recipes_df_path = os.path.join(os.path.dirname(__file__), 'backend', 'recipes_df.pkl')
+    recipes_df = pd.read_pickle(recipes_df_path)
+except FileNotFoundError as e:
+    print(f"File not found: {e.filename}")
+    recipe_embeddings = torch.tensor([])
+    recipes_df = pd.DataFrame()
 
-# Function to generate random recipe
-def generate_random_recipe():
-    recipes = [
-        "Spaghetti Carbonara: Ingredients - spaghetti, eggs, pancetta, Parmesan cheese, black pepper. Preparation - Boil spaghetti. Cook pancetta. Mix eggs and cheese. Combine all.",
-        "Chicken Curry: Ingredients - chicken, curry powder, coconut milk, onions, garlic. Preparation - Sauté onions and garlic. Add chicken and curry powder. Stir in coconut milk. Simmer until chicken is cooked."
-    ]
-    return random.choice(recipes)
+def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budget=''):
+    prompt_embedding = model.encode(prompt, convert_to_tensor=True)
+    similarities = torch.nn.functional.cosine_similarity(prompt_embedding, recipe_embeddings)
+    similarities = similarities.cpu().numpy()
+    top_indices = similarities.argsort()[::-1][:5]  # Get top 5 most similar recipes
+    
+    filtered_recipes = []
+    for idx in top_indices:
+        recipe = recipes_df.iloc[idx]
+        if not any(restriction in recipe['ingredients'] for restriction in dietary_restrictions.split(',')):
+            filtered_recipes.append(recipe)
+    
+    return filtered_recipes
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
@@ -28,14 +44,30 @@ def home():
         dietary_restrictions = request.form.get('dietary_restrictions', '')
         eating_habits = request.form.get('eating_habits', '')
         budget = request.form.get('budget', '')
-        menu = generate_menu(prompt, dietary_restrictions, eating_habits, budget)
-        return render_template('restaurantMenuGenerator.html', prompt=prompt, menu=menu)
+        
+        # Find similar recipes based on user input
+        similar_recipes = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
+        
+        # Prepare response with recipe names and summaries
+        recipes_menu = []
+        for recipe in similar_recipes:
+            recipe_name = recipe['name']
+            recipe_description = recipe['description']
+            recipe_summary = f"{recipe_name}: {recipe_description[:100]}..."  # Example: Limit description length
+            recipes_menu.append(recipe_summary)
+        
+        return render_template('restaurantMenuGenerator.html', prompt=prompt, menu=recipes_menu)
+    
     return render_template('restaurantMenuGenerator.html', prompt='', menu='')
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():
-    recipe = generate_random_recipe()
-    return jsonify(recipe)
+    random_index = random.randint(0, len(recipes_df) - 1)
+    random_recipe = recipes_df.iloc[random_index]
+    recipe_name = random_recipe['name']
+    recipe_description = random_recipe['description']
+    recipe_summary = f"{recipe_name}: {recipe_description[:100]}..."  # Example: Limit description length
+    return jsonify(recipe_summary)
 
 if __name__ == "__main__":
     app.run(debug=True)

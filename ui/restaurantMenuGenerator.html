@@ -52,7 +52,7 @@
         h2 {
             color: #333;
         }
-        p {
+        .menu-item, .random-recipe {
             background: #e9ecef;
             padding: 10px;
             border-radius: 5px;
@@ -76,8 +76,8 @@
     <div class="container">
         <h1>Restaurant Menu Generator</h1>
         <form method="post">
-            <label for="prompt">Enter your prompt:</label>
-            <input type="text" id="prompt" name="prompt" value="{{ prompt }}">
+            <label for="prompt">Enter your food:</label>
+            <input type="text" id="prompt" name="prompt">
             
             <label for="dietary_restrictions">Dietary Restrictions:</label>
             <input type="text" id="dietary_restrictions" name="dietary_restrictions">
@@ -91,12 +91,16 @@
             <input type="submit" value="Generate Menu">
         </form>
         
-        <h2>Generated Menu:</h2>
-        <p>{{ menu }}</p>
+        {% if menu %}
+            <h2>Generated Menu:</h2>
+            {% for item in menu %}
+                <p class="menu-item">{{ item }}</p>
+            {% endfor %}
+        {% endif %}
         
         <h2>Generate Random Recipe:</h2>
         <button class="button" onclick="fetchRandomRecipe()">Get Random Recipe</button>
-        <p id="random-recipe"></p>
+        <p id="random-recipe" class="random-recipe"></p>
     </div>
 
     <script>
