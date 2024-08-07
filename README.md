@@ -30,6 +30,22 @@ This project aims to revolutionize the restaurant industry by developing an adva
 4. **Enable Chefs to Generate Random Recipes**:
    - Implement a feature for chefs to create random recipes with comprehensive preparation instructions.
 
+## The tools that I used:
+
+1. Programming Languages: 
+   - Python
+   - Flask
+   - Jupyter Notebook
+2. Frameworks and Libraries: 
+   - PyTorch
+   - CUDA
+3. Development Tools: 
+   - Visual Studio Code
+4. Template (Pre-trained Transformer-based Models): 
+   - Hugging Face
+
+
+
 ### Getting Started
 
 To get started with the project, follow these steps:
