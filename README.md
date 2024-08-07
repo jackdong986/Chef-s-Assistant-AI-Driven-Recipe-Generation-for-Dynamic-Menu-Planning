@@ -37,3 +37,9 @@ To get started with the project, follow these steps:
 1. Clone the repository:
    ```sh
    https://github.com/jackdong986/ResMenuFYP.git
+
+2. Download the Dataset fromm Kaggle:
+   ```sh
+   https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions/data
+   
+
