@@ -13,7 +13,7 @@ model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 # Load saved embeddings and DataFrame
 try:
-    recipe_embeddings_path = os.path.join(os.path.dirname(__file__), 'backend', 'recipe_embeddings.npy')
+    recipe_embeddings_path = os.path.join(os.path.dirname(__file__), 'backend', 'recipe_embeddings.pt')
     recipe_embeddings = torch.tensor(np.load(recipe_embeddings_path))
     
     recipes_df_path = os.path.join(os.path.dirname(__file__), 'backend', 'recipes_df.pkl')
@@ -24,16 +24,39 @@ except FileNotFoundError as e:
     recipes_df = pd.DataFrame()
 
 def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budget=''):
-    prompt_embedding = model.encode(prompt, convert_to_tensor=True)
+    # Encode the prompt using the model
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    prompt_embedding = model.encode(prompt, convert_to_tensor=True, device=device)
+
+    # Calculate cosine similarities between the prompt and recipe embeddings
     similarities = torch.nn.functional.cosine_similarity(prompt_embedding, recipe_embeddings)
-    similarities = similarities.cpu().numpy()
-    top_indices = similarities.argsort()[::-1][:5]  # Get top 5 most similar recipes
+    
+    # Get indices of top 5 most similar recipes
+    top_indices = similarities.argsort(descending=True).cpu().numpy()[:5]
     
     filtered_recipes = []
     for idx in top_indices:
         recipe = recipes_df.iloc[idx]
-        if not any(restriction in recipe['ingredients'] for restriction in dietary_restrictions.split(',')):
-            filtered_recipes.append(recipe)
+        
+        # Filter based on dietary restrictions
+        if dietary_restrictions:
+            restrictions = dietary_restrictions.split(',')
+            if any(restriction in recipe['ingredients'] for restriction in restrictions):
+                continue
+        
+        # Filter based on eating habits
+        if eating_habits:
+            habits = eating_habits.split(',')
+            if not any(habit in recipe['tags'] for habit in habits):
+                continue
+        
+        # Filter based on budget
+        if budget:
+            budget = int(budget)
+            if not (budget - 20 <= recipe['amount'] <= budget + 20):
+                continue
+        
+        filtered_recipes.append(recipe)
     
     return filtered_recipes
 
@@ -58,7 +81,7 @@ def home():
         
         return render_template('restaurantMenuGenerator.html', prompt=prompt, menu=recipes_menu)
     
-    return render_template('restaurantMenuGenerator.html', prompt='', menu='')
+    return render_template('restaurantMenuGenerator.html', prompt='', menu=None)
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():

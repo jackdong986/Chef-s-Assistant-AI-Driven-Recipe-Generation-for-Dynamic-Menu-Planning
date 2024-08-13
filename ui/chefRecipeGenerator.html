@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chef Recipe Flow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .recipe-list {
+            display: none;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        .recipe-list button {
+            margin: 5px 0;
+            width: 200px;
+        }
+        .recipe-steps {
+            display: none;
+            margin-top: 20px;
+        }
+        #searchBar {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Chef Recipe Flow</h2>
+
+        <input type="text" id="searchBar" placeholder="Search for a recipe..." oninput="filterRecipes()" />
+        <button onclick="searchRecipe()">Search</button>
+        <button onclick="generateRandomRecipe()">Generate Random Food Recipe</button>
+
+        <div id="randomRecipe" class="recipe-steps">
+            <h3>Random Recipe:</h3>
+            <p id="randomRecipeTitle">Recipe Name</p>
+            <p><strong>Steps:</strong></p>
+            <p id="randomRecipeSteps">1. Step one...<br>2. Step two...</p>
+        </div>
+
+        <div id="searchResults" class="recipe-list">
+            <h3>Select a Recipe:</h3>
+            <button onclick="viewRecipe('Recipe 1')">Recipe 1</button>
+            <button onclick="viewRecipe('Recipe 2')">Recipe 2</button>
+            <button onclick="viewRecipe('Recipe 3')">Recipe 3</button>
+            <button onclick="viewRecipe('Recipe 4')">Recipe 4</button>
+            <button onclick="viewRecipe('Recipe 5')">Recipe 5</button>
+            <button onclick="viewRecipe('Recipe 6')">Recipe 6</button>
+            <button onclick="viewRecipe('Recipe 7')">Recipe 7</button>
+            <button onclick="viewRecipe('Recipe 8')">Recipe 8</button>
+            <button onclick="viewRecipe('Recipe 9')">Recipe 9</button>
+            <button onclick="viewRecipe('Recipe 10')">Recipe 10</button>
+        </div>
+
+        <div id="selectedRecipe" class="recipe-steps">
+            <h3>Selected Recipe:</h3>
+            <p id="selectedRecipeTitle">Recipe Name</p>
+            <p><strong>Steps:</strong></p>
+            <p id="selectedRecipeSteps">1. Step one...<br>2. Step two...</p>
+        </div>
+    </div>
+
+    <script>
+        function generateRandomRecipe() {
+            document.getElementById('randomRecipeTitle').textContent = 'Random Recipe Name';
+            document.getElementById('randomRecipeSteps').innerHTML = '1. Random Step one...<br>2. Random Step two...';
+            document.getElementById('randomRecipe').style.display = 'block';
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('selectedRecipe').style.display = 'none';
+        }
+
+        function searchRecipe() {
+            document.getElementById('searchResults').style.display = 'flex';
+            document.getElementById('randomRecipe').style.display = 'none';
+            document.getElementById('selectedRecipe').style.display = 'none';
+        }
+
+        function viewRecipe(recipeName) {
+            document.getElementById('selectedRecipeTitle').textContent = recipeName;
+            document.getElementById('selectedRecipeSteps').innerHTML = '1. ' + recipeName + ' Step one...<br>2. ' + recipeName + ' Step two...';
+            document.getElementById('selectedRecipe').style.display = 'block';
+            document.getElementById('searchResults').style.display = 'none';
+        }
+
+        function filterRecipes() {
+            const input = document.getElementById('searchBar').value.toLowerCase();
+            const buttons = document.querySelectorAll('#searchResults button');
+            buttons.forEach(button => {
+                if (button.textContent.toLowerCase().includes(input)) {
+                    button.style.display = '';
+                } else {
+                    button.style.display = 'none';
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
