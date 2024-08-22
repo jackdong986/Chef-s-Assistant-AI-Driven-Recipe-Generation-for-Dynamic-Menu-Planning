@@ -34,13 +34,13 @@ This project aims to revolutionize the restaurant industry by developing an adva
 
 1. Programming Languages: 
    - Python
-   - Flask
-   - Jupyter Notebook
 2. Frameworks and Libraries: 
    - PyTorch
    - CUDA
+   - Flask
 3. Development Tools: 
    - Visual Studio Code
+   - Jupyter Notebook
 4. Template (Pre-trained Transformer-based Models): 
    - Hugging Face
 
