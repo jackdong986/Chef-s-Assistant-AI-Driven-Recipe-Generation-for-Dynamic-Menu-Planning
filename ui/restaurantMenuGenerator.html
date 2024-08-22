@@ -1,66 +1,78 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Restaurant Menu Generator</title>
     <style>
-        /* CSS styles here */
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
+            background-color: #E6F7FF; /* Body background color */
             margin: 0;
             padding: 0;
         }
+
         .container {
             width: 50%;
             margin: auto;
             overflow: hidden;
             padding: 20px;
-            background: #fff;
+            background: #FFFFFF; /* Container background color */
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             margin-top: 50px;
+            border: 1px solid #E0E0E0; /* Soft border */
         }
+
         h1 {
             text-align: center;
-            color: #333;
+            color: #00509E; /* Primary color */
         }
+
         form {
             display: flex;
             flex-direction: column;
         }
+
         label {
             margin: 10px 0 5px;
-            color: #555;
+            color: #00509E; /* Primary color */
         }
+
         input[type="text"] {
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 20px;
         }
+
         input[type="submit"] {
-            background: #28a745;
-            color: #fff;
+            background: #FFD500; /* Secondary color */
+            color: #00509E; /* Primary color */
             padding: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
         }
+
         input[type="submit"]:hover {
-            background: #218838;
+            background: #FFC300; /* Darker shade of secondary color */
         }
+
         h2 {
-            color: #333;
+            color: #00509E; /* Primary color */
         }
-        .menu-item, .random-recipe {
-            background: #e9ecef;
+
+        .menu-item,
+        .random-recipe {
+            background: #F2F2F2; /* Accent color */
             padding: 10px;
             border-radius: 5px;
             margin-top: 10px;
         }
+
         .button {
-            background: #007bff;
+            background: #00509E; /* Primary color */
             color: #fff;
             padding: 10px;
             border: none;
@@ -68,9 +80,11 @@
             cursor: pointer;
             font-size: 16px;
         }
+
         .button:hover {
-            background: #0056b3;
+            background: #003d7e; /* Darker shade of primary color */
         }
+
         .popup {
             display: none;
             position: fixed;
@@ -83,21 +97,25 @@
             border-radius: 10px;
             z-index: 1000;
         }
+
         .popup h2 {
             margin: 0;
         }
+
         .popup input[type="button"] {
-            background: #28a745;
-            color: #fff;
+            background: #FFD500; /* Secondary color */
+            color: #00509E; /* Primary color */
             padding: 10px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
         }
+
         .popup input[type="button"]:hover {
-            background: #218838;
+            background: #FFC300; /* Darker shade of secondary color */
         }
+
         .popup .close {
             background: #dc3545;
             color: #fff;
@@ -107,52 +125,50 @@
             cursor: pointer;
             font-size: 16px;
         }
+
         .popup .close:hover {
             background: #c82333;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Restaurant Menu Generator</h1>
         <form method="post" action="/">
             <label for="prompt">Enter your food:</label>
             <input type="text" id="prompt" name="prompt" required>
-            
-            <label for="dietary_restrictions">Dietary Restrictions:</label>
+
+            <label for="dietary_restrictions">Dietary Restrictions (Exclude):</label>
             <input type="text" id="dietary_restrictions" name="dietary_restrictions">
-            
-            <label for="eating_habits">Eating Habits:</label>
+
+            <label for="eating_habits">Eating Habits (Include):</label>
             <input type="text" id="eating_habits" name="eating_habits">
-            
+
             <label for="budget">Budget:</label>
             <input type="text" id="budget" name="budget">
-            
+
             <input type="submit" value="Generate Menu">
         </form>
-        
-        {% if menu %}
+
+        {% if recipes %}
         <div id="menu-section">
             <h2>Generated Menu:</h2>
             <div id="menu-container">
-                {% for item in menu %}
-                <p class="menu-item">{{ item }}</p>
+                {% for recipe in recipes %}
+                <div class="menu-item">
+                    <h3>{{ recipe.name }}</h3>
+                    <p><strong>Estimated Cost:</strong> ${{ recipe.amount }}</p>
+                    <p><strong>Description:</strong> {{ recipe.description }}</p>
+                </div>
                 {% endfor %}
             </div>
         </div>
         {% endif %}
-        
+
         <h2>Generate Random Recipe:</h2>
         <button class="button" onclick="fetchRandomRecipe()">Get Random Recipe</button>
-        <p id="random-recipe" class="random-recipe"></p>
-
-        <div id="rate-popup" class="popup">
-            <h2>Rate Food Menu</h2>
-            <label for="rating">Your Rating (1-5):</label>
-            <input type="text" id="rating" name="rating">
-            <input type="button" value="Submit" onclick="submitRating()">
-            <input type="button" value="Close" class="close" onclick="closePopup()">
-        </div>
+        <div id="random-recipe" class="random-recipe"></div>
     </div>
 
     <script>
@@ -160,24 +176,19 @@
             fetch('/generate_random_recipe')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('random-recipe').innerText = data;
+                    let randomRecipesHtml = '';
+                    data.forEach(function (recipe) {
+                        randomRecipesHtml += `<div class="menu-item">
+                            <h3>${recipe.name}</h3>
+                            <p><strong>Estimated Cost:</strong> $${recipe.amount}</p>
+                            <p>${recipe.description}</p>
+                        </div>`;
+                    });
+                    document.getElementById('random-recipe').innerHTML = randomRecipesHtml;
                 })
                 .catch(error => console.error('Error fetching random recipe:', error));
         }
-
-        function showPopup() {
-            document.getElementById('rate-popup').style.display = 'block';
-        }
-
-        function closePopup() {
-            document.getElementById('rate-popup').style.display = 'none';
-        }
-
-        function submitRating() {
-            const rating = document.getElementById('rating').value;
-            // Submit the rating to the server (implement server-side logic)
-            closePopup();
-        }
     </script>
 </body>
+
 </html>
