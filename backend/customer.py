@@ -95,7 +95,7 @@ def home():
         budget = request.form.get('budget', '')
 
         # Find similar recipes based on user input
-        similar_recipes = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
+        similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
         # Generate new recipes using GPT-2
         new_recipe = pipe(prompt, max_length=200, num_return_sequences=1)[0]['generated_text']
