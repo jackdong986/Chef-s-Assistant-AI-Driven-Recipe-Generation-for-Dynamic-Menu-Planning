@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #E6F7FF; /* Body background color */
+            background-color: #E6F7FF;
             margin: 0;
             padding: 0;
         }
@@ -16,16 +16,16 @@
             margin: auto;
             overflow: hidden;
             padding: 20px;
-            background: #FFFFFF; /* Container background color */
+            background: #FFFFFF;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             margin-top: 50px;
-            border: 1px solid #E0E0E0; /* Soft border */
+            border: 1px solid #E0E0E0;
         }
 
         h1 {
             text-align: center;
-            color: #00509E; /* Primary color */
+            color: #00509E;
         }
 
         form {
@@ -35,7 +35,7 @@
 
         label {
             margin: 10px 0 5px;
-            color: #00509E; /* Primary color */
+            color: #00509E;
         }
 
         input[type="text"] {
@@ -46,8 +46,8 @@
         }
 
         input[type="submit"] {
-            background: #FFD500; /* Secondary color */
-            color: #00509E; /* Primary color */
+            background: #FFD500;
+            color: #00509E;
             padding: 10px;
             border: none;
             border-radius: 5px;
@@ -56,23 +56,23 @@
         }
 
         input[type="submit"]:hover {
-            background: #FFC300; /* Darker shade of secondary color */
+            background: #FFC300;
         }
 
         h2 {
-            color: #00509E; /* Primary color */
+            color: #00509E;
         }
 
         .menu-item,
         .random-recipe {
-            background: #F2F2F2; /* Accent color */
+            background: #F2F2F2;
             padding: 10px;
             border-radius: 5px;
             margin-top: 10px;
         }
 
         .button {
-            background: #00509E; /* Primary color */
+            background: #00509E;
             color: #fff;
             padding: 10px;
             border: none;
@@ -82,7 +82,7 @@
         }
 
         .button:hover {
-            background: #003d7e; /* Darker shade of primary color */
+            background: #003d7e;
         }
 
         .popup {
@@ -103,8 +103,8 @@
         }
 
         .popup input[type="button"] {
-            background: #FFD500; /* Secondary color */
-            color: #00509E; /* Primary color */
+            background: #FFD500;
+            color: #00509E;
             padding: 10px;
             border: none;
             border-radius: 5px;
@@ -113,7 +113,7 @@
         }
 
         .popup input[type="button"]:hover {
-            background: #FFC300; /* Darker shade of secondary color */
+            background: #FFC300;
         }
 
         .popup .close {
@@ -167,12 +167,12 @@
         {% endif %}
 
         <h2>Generate Random Recipe:</h2>
-        <button class="button" onclick="fetchRandomRecipe()">Get Random Recipe</button>
-        <div id="random-recipe" class="random-recipe"></div>
+        <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
+        <div id="random-recipes" class="random-recipe"></div>
     </div>
 
     <script>
-        function fetchRandomRecipe() {
+        function fetchRandomRecipes() {
             fetch('/generate_random_recipe')
                 .then(response => response.json())
                 .then(data => {
@@ -184,9 +184,9 @@
                             <p>${recipe.description}</p>
                         </div>`;
                     });
-                    document.getElementById('random-recipe').innerHTML = randomRecipesHtml;
+                    document.getElementById('random-recipes').innerHTML = randomRecipesHtml;
                 })
-                .catch(error => console.error('Error fetching random recipe:', error));
+                .catch(error => console.error('Error fetching random recipes:', error));
         }
     </script>
 </body>

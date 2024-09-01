@@ -25,7 +25,7 @@ Price: {row['amount']}
 # Apply the function to each row
 recipes_df['text'] = recipes_df.apply(create_recipe_text, axis=1)
 
-# Save to a text file
+# Save to a txt file
 with open(r'C:/Users/Jack/Documents/GitHub/ResMenuFYP/fine-tuning/train.txt', 'w', encoding='utf-8') as f:
     for line in recipes_df['text']:
         f.write(line + '\n')
