@@ -1,11 +1,11 @@
 import pandas as pd
 from datasets import Dataset
 
-# Load the dataset
+# Load the dataset (for read & write)
 dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
 recipes_df = pd.read_csv(dataset_path, encoding='ISO-8859-1')
 
-# Prepare the text data
+# Prepare the txt data
 def create_recipe_text(row):
     return f"""
 Recipe Name: {row['name']}

@@ -8,16 +8,16 @@ from transformers import pipeline
 
 app = Flask(__name__, template_folder='../ui')
 
-# Initialize the text generation pipeline
+# v1 gpt model (havent fine-tuning)
 pipe = pipeline("text-generation", model="openai-community/gpt2-large")
 
-# Initialize the SentenceTransformer model
+# SentenceTransformer model
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
-# Specify the path to your dataset
+# Path for dataset
 dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
 
-# Load the dataset and embeddings if they exist
+# Load the dataset and embeddings if they exist (read&write)
 if os.path.exists(dataset_path):
     recipes_df = pd.read_csv(dataset_path, encoding='ISO-8859-1')
 else:
@@ -86,7 +86,7 @@ def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budg
 
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    global recipes_df  # Ensure we are modifying the global variable
+    global recipes_df 
 
     if request.method == 'POST':
         prompt = request.form['prompt']
@@ -97,7 +97,7 @@ def home():
         # Find similar recipes based on user input
         similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
-        # Generate new recipes using GPT-2
+        # Generate new recipes (using gpt2)
         new_recipe = pipe(prompt, max_length=200, num_return_sequences=1)[0]['generated_text']
 
         # Add the new recipe to the dataframe
@@ -108,13 +108,15 @@ def home():
             'contributor_id': random.randint(1000, 9999),  # Random contributor id
             'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  # Current date
             'tags': 'generated',  # Tag indicating generated recipe
-            'nutrition': [random.randint(100, 500) for _ in range(7)],  # Random nutritional values
-            'n_steps': random.randint(3, 10),  # Random number of steps
-            'steps': ['Generated step'] * random.randint(3, 10),  # Random steps
+            
+            #random generate specify data
+            'nutrition': [random.randint(100, 500) for _ in range(7)],  
+            'n_steps': random.randint(3, 10),  
+            'steps': ['Generated step'] * random.randint(3, 10),  
             'description': new_recipe,
-            'ingredients': ['generated ingredient'] * random.randint(3, 10),  # Random ingredients
-            'n_ingredients': random.randint(3, 10),  # Random number of ingredients
-            'amount': random.randint(50, 200),  # Random budget
+            'ingredients': ['generated ingredient'] * random.randint(3, 10), 
+            'n_ingredients': random.randint(3, 10),  
+            'amount': random.randint(50, 200),  
         }
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
 
