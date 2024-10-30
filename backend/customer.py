@@ -8,7 +8,7 @@ from transformers import pipeline
 
 app = Flask(__name__, template_folder='../ui')
 
-# v1 gpt model (havent fine-tuning)
+# v1 GPT model (hasn't been fine-tuned)
 pipe = pipeline("text-generation", model="openai-community/gpt2-large")
 
 # SentenceTransformer model
@@ -17,11 +17,15 @@ model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 # Path for dataset
 dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
 
-# Load the dataset and embeddings if they exist (read&write)
+# Load the dataset and embeddings if they exist
 if os.path.exists(dataset_path):
     recipes_df = pd.read_csv(dataset_path, encoding='ISO-8859-1')
 else:
-    recipes_df = pd.DataFrame(columns=['name', 'id', 'minutes', 'contributor_id', 'submitted', 'tags', 'nutrition', 'n_steps', 'steps', 'description', 'ingredients', 'n_ingredients', 'amount'])
+    recipes_df = pd.DataFrame(columns=[
+        'name', 'id', 'minutes', 'contributor_id', 'submitted', 'tags', 
+        'nutrition', 'n_steps', 'steps', 'description', 'ingredients', 
+        'n_ingredients', 'amount'
+    ])
 
 recipe_embeddings_path = os.path.join(os.path.dirname(dataset_path), 'recipe_embeddings.pt')
 if os.path.exists(recipe_embeddings_path):
@@ -67,18 +71,8 @@ def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budg
 
         filtered_recipes.append({
             'name': recipe['name'],
-            'id': recipe['id'],
-            'minutes': recipe['minutes'],
-            'contributor_id': recipe['contributor_id'],
-            'submitted': recipe['submitted'],
-            'tags': recipe['tags'],
-            'nutrition': recipe['nutrition'],
-            'n_steps': recipe['n_steps'],
-            'steps': recipe['steps'],
-            'description': recipe['description'],
-            'ingredients': recipe['ingredients'],
-            'n_ingredients': recipe['n_ingredients'],
-            'amount': recipe['amount']
+            'amount': recipe['amount'],
+            'description': recipe['description']
         })
 
     most_similar_recipe = filtered_recipes[0] if filtered_recipes else None
@@ -97,10 +91,10 @@ def home():
         # Find similar recipes based on user input
         similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
-        # Generate new recipes (using gpt2)
+        # Generate new recipe (using GPT-2 pipeline)
         new_recipe = pipe(prompt, max_length=200, num_return_sequences=1)[0]['generated_text']
 
-        # Add the new recipe to the dataframe
+        # Add the new recipe to the dataframe with all fields
         new_recipe_data = {
             'name': new_recipe[:30],  # Truncate name
             'id': random.randint(100000, 999999),  # Generate a random unique id
@@ -109,7 +103,7 @@ def home():
             'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  # Current date
             'tags': 'generated',  # Tag indicating generated recipe
             
-            #random generate specify data
+            # Randomly generated values
             'nutrition': [random.randint(100, 500) for _ in range(7)],  
             'n_steps': random.randint(3, 10),  
             'steps': ['Generated step'] * random.randint(3, 10),  
@@ -118,14 +112,16 @@ def home():
             'n_ingredients': random.randint(3, 10),  
             'amount': random.randint(50, 200),  
         }
+
+        # Append the new recipe to the DataFrame and save
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
+        recipes_df.to_csv(dataset_path, index=False)  # Save the full dataset back to CSV
 
-        # Save the updated recipes to the CSV file
-        recipes_df.to_csv(dataset_path, index=False)
+        # Pass both similar and new recipe to the template
+        return render_template('restaurantMenuGenerator.html', prompt=prompt, recipes=similar_recipes, new_recipe=new_recipe_data)
 
-        return render_template('restaurantMenuGenerator.html', prompt=prompt, recipes=similar_recipes)
-
-    return render_template('restaurantMenuGenerator.html', prompt='', recipes=None)
+    # Render template with no recipes if GET request
+    return render_template('restaurantMenuGenerator.html', prompt='', recipes=None, new_recipe=None)
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():

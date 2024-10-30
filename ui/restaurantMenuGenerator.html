@@ -168,6 +168,16 @@
         <p>No recipes found matching your criteria.</p>
         {% endif %}
 
+        {% if new_recipe %}
+        <div id="new-recipe-section">
+            <h2>Newly Generated Recipe:</h2>
+            <div class="menu-item">
+                <h3>{{ new_recipe.name }}</h3>
+                <p><strong>Item Price:</strong> ${{ new_recipe.amount }}</p>
+                <p><strong>Description:</strong> {{ new_recipe.description }}</p>
+            </div>
+        </div>
+        {% endif %}
 
         <h2>Generate Random Recipe:</h2>
         <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
