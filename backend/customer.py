@@ -8,10 +8,10 @@ from transformers import pipeline
 
 app = Flask(__name__, template_folder='../ui')
 
-# v1 GPT model (hasn't been fine-tuned)
+# Initialize GPT-2 model pipeline
 pipe = pipeline("text-generation", model="openai-community/gpt2-large")
 
-# SentenceTransformer model
+# SentenceTransformer model for similarity
 model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 # Path for dataset
@@ -91,25 +91,37 @@ def home():
         # Find similar recipes based on user input
         similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
-        # Generate new recipe (using GPT-2 pipeline)
-        new_recipe = pipe(prompt, max_length=200, num_return_sequences=1)[0]['generated_text']
+        # Refined prompts to avoid echoing the original request
+        name_prompt = f"Dish name: {prompt}."
+        description_prompt = f"An enticing description of {prompt}, focusing on flavors and textures."
+
+        tags_prompt = f"Relevant tags for a dish called '{prompt}'."
+        steps_prompt = f"Step-by-step guide for making '{prompt}' in 10 steps or less."
+        ingredients_prompt = f"List the ingredients needed for {prompt}."
+
+        # Generate each part of the recipe using GPT-2
+        name = pipe(name_prompt, max_length=10, num_return_sequences=1)[0]['generated_text'].strip()
+        description = pipe(description_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].strip()
+        tags = pipe(tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
+        steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
+        ingredients = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
         # Add the new recipe to the dataframe with all fields
         new_recipe_data = {
-            'name': new_recipe[:30],  # Truncate name
+            'name': name,
             'id': random.randint(100000, 999999),  # Generate a random unique id
             'minutes': random.randint(15, 60),  # Random preparation time
             'contributor_id': random.randint(1000, 9999),  # Random contributor id
             'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  # Current date
-            'tags': 'generated',  # Tag indicating generated recipe
+            'tags': ', '.join(tags),  # Join tags list into a string
             
-            # Randomly generated values
+            # Generated values and randomly assigned fields
             'nutrition': [random.randint(100, 500) for _ in range(7)],  
-            'n_steps': random.randint(3, 10),  
-            'steps': ['Generated step'] * random.randint(3, 10),  
-            'description': new_recipe,
-            'ingredients': ['generated ingredient'] * random.randint(3, 10), 
-            'n_ingredients': random.randint(3, 10),  
+            'n_steps': len(steps),  
+            'steps': steps,  
+            'description': description,
+            'ingredients': ingredients, 
+            'n_ingredients': len(ingredients),  
             'amount': random.randint(50, 200),  
         }
 
@@ -117,11 +129,11 @@ def home():
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
         recipes_df.to_csv(dataset_path, index=False)  # Save the full dataset back to CSV
 
-        # Pass both similar and new recipe to the template
-        return render_template('restaurantMenuGenerator.html', prompt=prompt, recipes=similar_recipes, new_recipe=new_recipe_data)
+        # Pass only the generated recipe to the template
+        return render_template('restaurantMenuGenerator.html', recipes=similar_recipes, new_recipe=new_recipe_data)
 
     # Render template with no recipes if GET request
-    return render_template('restaurantMenuGenerator.html', prompt='', recipes=None, new_recipe=None)
+    return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None)
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():

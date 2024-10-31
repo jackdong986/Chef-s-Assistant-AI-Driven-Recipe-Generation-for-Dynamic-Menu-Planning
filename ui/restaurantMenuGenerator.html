@@ -134,7 +134,7 @@
 
 <body>
     <div class="container">
-        <h1>Restaurant Menu Generator</h1>
+        <h1>Restaurant Recipe Generator</h1>
         <form method="post" action="/">
             <label for="prompt">Enter your food:</label>
             <input type="text" id="prompt" name="prompt" required>
@@ -164,8 +164,6 @@
                 {% endfor %}
             </div>
         </div>
-        {% else %}
-        <p>No recipes found matching your criteria.</p>
         {% endif %}
 
         {% if new_recipe %}
