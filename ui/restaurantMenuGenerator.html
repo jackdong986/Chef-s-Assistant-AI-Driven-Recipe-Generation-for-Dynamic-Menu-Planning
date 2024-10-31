@@ -6,7 +6,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #E6F7FF; /* Body background color */
+            background-color: #E6F7FF;
             margin: 0;
             padding: 0;
         }
@@ -16,16 +16,16 @@
             margin: auto;
             overflow: hidden;
             padding: 20px;
-            background: #FFFFFF; /* Container background color */
+            background: #FFFFFF;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             margin-top: 50px;
-            border: 1px solid #E0E0E0; /* Soft border */
+            border: 1px solid #E0E0E0;
         }
 
         h1 {
             text-align: center;
-            color: #00509E; /* Primary color */
+            color: #00509E;
         }
 
         form {
@@ -35,7 +35,7 @@
 
         label {
             margin: 10px 0 5px;
-            color: #00509E; /* Primary color */
+            color: #00509E;
         }
 
         input[type="text"] {
@@ -46,8 +46,8 @@
         }
 
         input[type="submit"] {
-            background: #FFD500; /* Secondary color */
-            color: #00509E; /* Primary color */
+            background: #FFD500;
+            color: #00509E;
             padding: 10px;
             border: none;
             border-radius: 5px;
@@ -56,23 +56,23 @@
         }
 
         input[type="submit"]:hover {
-            background: #FFC300; /* Darker shade of secondary color */
+            background: #FFC300;
         }
 
         h2 {
-            color: #00509E; /* Primary color */
+            color: #00509E;
         }
 
         .menu-item,
         .random-recipe {
-            background: #F2F2F2; /* Accent color */
+            background: #F2F2F2;
             padding: 10px;
             border-radius: 5px;
             margin-top: 10px;
         }
 
         .button {
-            background: #00509E; /* Primary color */
+            background: #00509E;
             color: #fff;
             padding: 10px;
             border: none;
@@ -82,59 +82,57 @@
         }
 
         .button:hover {
-            background: #003d7e; /* Darker shade of primary color */
+            background: #003d7e;
         }
 
-        .popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            padding: 20px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        #random-recipes {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
             border-radius: 10px;
-            z-index: 1000;
+            background-color: #F9F9F9;
+            transition: background-color 0.3s ease;
         }
 
-        .popup h2 {
-            margin: 0;
+        #random-recipes:hover {
+            background-color: #F1F1F1;
         }
 
-        .popup input[type="button"] {
-            background: #FFD500; /* Secondary color */
-            color: #00509E; /* Primary color */
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .popup input[type="button"]:hover {
-            background: #FFC300; /* Darker shade of secondary color */
-        }
-
-        .popup .close {
-            background: #dc3545;
+        .button {
+            background: #00509E;
             color: #fff;
-            padding: 10px;
+            padding: 12px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .popup .close:hover {
-            background: #c82333;
+        .button:hover {
+            background: #003d7e;
+            transform: translateY(-2px);
+        }
+
+        .random-recipe {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .random-recipe .menu-item {
+            background: #E8F5E9;
+            border-left: 5px solid #4CAF50;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
     </style>
 </head>
 
 <body>
     <div class="container">
-        <h1>Restaurant Menu Generator</h1>
+        <h1>Restaurant Food item with it's food price and description</h1>
         <form method="post" action="/">
             <label for="prompt">Enter your food:</label>
             <input type="text" id="prompt" name="prompt" required>
@@ -153,12 +151,12 @@
 
         {% if recipes %}
         <div id="menu-section">
-            <h2>Generated Menu:</h2>
+            <h2>Exist Recipe:</h2>
             <div id="menu-container">
                 {% for recipe in recipes %}
                 <div class="menu-item">
                     <h3>{{ recipe.name }}</h3>
-                    <p><strong>Estimated Cost:</strong> ${{ recipe.amount }}</p>
+                    <p><strong>Item Price:</strong> ${{ recipe.amount }}</p>
                     <p><strong>Description:</strong> {{ recipe.description }}</p>
                 </div>
                 {% endfor %}
@@ -166,13 +164,35 @@
         </div>
         {% endif %}
 
+        {% if new_recipe %}
+        <div id="new-recipe-section">
+            <h2>Newly Recipe:</h2>
+            <div class="menu-item">
+                <h3>{{ new_recipe.name }}</h3>
+                <p><strong>Item Price:</strong> ${{ new_recipe.amount }}</p>
+                <p><strong>Description:</strong> {{ new_recipe.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- {% if most_similar_recipe %}
+        <div id="most-similar-recipe">
+            <h2>Most Similar Recipe:</h2>
+            <div class="menu-item">
+                <h3>{{ most_similar_recipe.name }}</h3>
+                <p><strong>Item Price:</strong> ${{ most_similar_recipe.amount }}</p>
+                <p><strong>Description:</strong> {{ most_similar_recipe.description }}</p>
+            </div>
+        </div>
+        {% endif %} -->
+
         <h2>Generate Random Recipe:</h2>
-        <button class="button" onclick="fetchRandomRecipe()">Get Random Recipe</button>
-        <div id="random-recipe" class="random-recipe"></div>
+        <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
+        <div id="random-recipes" class="random-recipe"></div>
     </div>
 
     <script>
-        function fetchRandomRecipe() {
+        function fetchRandomRecipes() {
             fetch('/generate_random_recipe')
                 .then(response => response.json())
                 .then(data => {
@@ -184,9 +204,9 @@
                             <p>${recipe.description}</p>
                         </div>`;
                     });
-                    document.getElementById('random-recipe').innerHTML = randomRecipesHtml;
+                    document.getElementById('random-recipes').innerHTML = randomRecipesHtml;
                 })
-                .catch(error => console.error('Error fetching random recipe:', error));
+                .catch(error => console.error('Error fetching random recipes:', error));
         }
     </script>
 </body>

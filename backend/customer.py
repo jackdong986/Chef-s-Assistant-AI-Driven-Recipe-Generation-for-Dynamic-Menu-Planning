@@ -1,78 +1,108 @@
 from flask import Flask, render_template, request, jsonify
 import random
 import torch
-from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer, AutoModel, pipeline
 import pandas as pd
 import os
-from transformers import pipeline
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__, template_folder='../ui')
 
-# Initialize the text generation pipeline
 pipe = pipeline("text-generation", model="openai-community/gpt2-large")
 
-# Initialize the SentenceTransformer model
-model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
 
-# Load the dataset and saved embeddings
-try:
-    dataset_path = os.path.join(os.path.dirname(__file__), 'backend', 'RAW_recipes_ten_records.csv')
-    recipes_df = pd.read_csv(dataset_path)
-    
-    recipe_embeddings_path = os.path.join(os.path.dirname(__file__), 'backend', 'recipe_embeddings.pt')
-    recipe_embeddings = torch.load(recipe_embeddings_path, map_location='cuda' if torch.cuda.is_available() else 'cpu')
-except FileNotFoundError as e:
-    print(f"File not found: {e.filename}")
-    recipe_embeddings = torch.tensor([]).cuda() if torch.cuda.is_available() else torch.tensor([])
-    recipes_df = pd.DataFrame()
+dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
+
+if os.path.exists(dataset_path):
+    recipes_df = pd.read_csv(dataset_path, encoding='ISO-8859-1')
+else:
+    recipes_df = pd.DataFrame(columns=[
+        'name', 'id', 'minutes', 'contributor_id', 'submitted', 'tags', 
+        'nutrition', 'n_steps', 'steps', 'description', 'ingredients', 
+        'n_ingredients', 'amount'
+    ])
+
+def encode_text(text):
+    """Encode text using AutoTokenizer and AutoModel, returning a normalized embedding."""
+    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
+    with torch.no_grad():
+        embeddings = model(**inputs).last_hidden_state[:, 0, :]
+    return torch.nn.functional.normalize(embeddings, p=2, dim=1)  
 
 def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budget=''):
-    # Encode the prompt using the model
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    prompt_embedding = model.encode(prompt, convert_to_tensor=True, device=device)
+    prompt_embedding = encode_text(prompt)
 
-    if recipe_embeddings.size(0) == 0:
-        return []  # Return an empty list if embeddings are not available
+    recipe_embeddings = []
+    recipe_details = []
 
-    # Calculate cosine similarities between the prompt and recipe embeddings
-    similarities = torch.nn.functional.cosine_similarity(prompt_embedding.unsqueeze(0), recipe_embeddings.to(device))
+    for _, recipe in recipes_df.iterrows():
+        tags = recipe['tags']
+        
+        if isinstance(tags, float) and pd.isna(tags):  # Skip NaN tags
+            continue
+        elif isinstance(tags, str):
+            try:
+                tags = eval(tags)  # Convert string representation to a list
+                if not isinstance(tags, list):
+                    continue  # Skip if eval returns something other than a list
+            except:
+                continue  # Skip if eval fails
+        elif not isinstance(tags, list):  # Skip if tags is not a list
+            continue
 
-    # Get indices of top 5 most similar recipes
-    top_indices = similarities.argsort(descending=True).cpu().numpy()[:5]
+        tags = [str(tag).lower() for tag in tags]  # Ensure all tags are lowercase strings
 
-    filtered_recipes = []
-    for idx in top_indices:
-        recipe = recipes_df.iloc[idx]
-
-        # Filter out recipes based on dietary restrictions
+        # Filter based on dietary restrictions
         if dietary_restrictions:
-            restrictions = dietary_restrictions.split(',')
-            if any(restriction.strip().lower() in recipe['ingredients'].lower() for restriction in restrictions):
+            restrictions = [r.strip().lower() for r in dietary_restrictions.split(',')]
+            if not all(restriction in tags for restriction in restrictions):
                 continue
 
-        # Prefer recipes with eating habits
+        # Filter based on eating habits
         if eating_habits:
-            habits = eating_habits.split(',')
-            if not any(habit.strip().lower() in recipe['tags'].lower() for habit in habits):
+            habits = [h.strip().lower() for h in eating_habits.split(',')]
+            if not any(habit in tags for habit in habits):
                 continue
 
-        # Filter based on budget (within a range of ±20)
+        # Filter based on budget
         if budget:
-            budget = int(budget)
-            if not (budget - 20 <= recipe['amount'] <= budget + 20):
-                continue
+            try:
+                recipe_amount = float(recipe['amount'])  # Convert amount to float
+                budget = float(budget)
+                if not (budget - 20 <= recipe_amount <= budget + 20):
+                    continue
+            except ValueError:
+                continue  # Skip if conversion fails
 
-        filtered_recipes.append({
+        # Encode recipe name and add to embeddings list
+        recipe_embedding = encode_text(recipe['name'])
+        recipe_embeddings.append(recipe_embedding)
+        recipe_details.append({
             'name': recipe['name'],
-            'description': recipe['description'],
-            'amount': recipe['amount']
+            'amount': recipe['amount'],
+            'description': recipe['description']
         })
 
-    return filtered_recipes
+    # Calculate cosine similarities
+    if recipe_embeddings:
+        recipe_embeddings = torch.cat(recipe_embeddings, dim=0)
+        similarities = cosine_similarity(prompt_embedding.cpu().numpy(), recipe_embeddings.cpu().numpy())
+        similarity_scores = similarities[0]
 
+        # Sort recipes by similarity
+        sorted_indices = similarity_scores.argsort()[::-1]
+        filtered_recipes = [recipe_details[i] for i in sorted_indices[:10]]
+
+        most_similar_recipe = filtered_recipes[0] if filtered_recipes else None
+        return filtered_recipes, most_similar_recipe
+    else:
+        return [], None
+    
 @app.route('/', methods=['GET', 'POST'])
 def home():
-    global recipes_df  # Ensure we are modifying the global variable
+    global recipes_df 
 
     if request.method == 'POST':
         prompt = request.form['prompt']
@@ -80,36 +110,58 @@ def home():
         eating_habits = request.form.get('eating_habits', '')
         budget = request.form.get('budget', '')
 
-        # Find similar recipes based on user input
-        similar_recipes = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
+        similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
-        # Generate new recipes using GPT-2
-        new_recipe = pipe(prompt, max_length=50, num_return_sequences=1)[0]['generated_text']
+        name_prompt = f"Dish name: {prompt}."
+        description_prompt = f"An enticing description of {prompt}, focusing on flavors and textures."
 
-        # Add the new recipe to the dataframe
+        tags_prompt = f"Relevant tags for a dish called '{prompt}'."
+        steps_prompt = f"Step-by-step guide for making '{prompt}' in 10 steps or less."
+        ingredients_prompt = f"List the ingredients needed for {prompt}."
+
+        # Generate each part of the recipe using GPT-2
+        name = pipe(name_prompt, max_length=10, num_return_sequences=1)[0]['generated_text'].strip()
+        description = pipe(description_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].strip()
+        tags = pipe(tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
+        steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
+        ingredients = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
+
+        # Add the new recipe to the dataframe with all fields
         new_recipe_data = {
-            'name': new_recipe[:30],  # Truncate name
-            'description': new_recipe,
-            'amount': random.randint(50, 200),  # Random budget
+            'name': name,
+            'id': random.randint(100000, 999999),  # Generate a random unique id
+            'minutes': random.randint(15, 60),  # Random preparation time
+            'contributor_id': random.randint(1000, 9999),  # Random contributor id
+            'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  # Current date
+            'tags': ', '.join(tags),  # Join tags list into a string
+            
+            # Generated values and randomly assigned fields
+            'nutrition': [random.randint(100, 500) for _ in range(7)],  
+            'n_steps': len(steps),  
+            'steps': steps,  
+            'description': description,
+            'ingredients': ingredients, 
+            'n_ingredients': len(ingredients),  
+            'amount': random.randint(50, 200),  
         }
+
+        # Append the new recipe to the DataFrame and save
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
+        recipes_df.to_csv(dataset_path, index=False)  # Save the full dataset back to CSV
 
-        # Ensure the directory exists
-        dataset_directory = os.path.dirname(dataset_path)
-        if not os.path.exists(dataset_directory):
-            os.makedirs(dataset_directory)
+        return render_template(
+            'restaurantMenuGenerator.html', 
+            recipes=similar_recipes, 
+            new_recipe=new_recipe_data,
+            most_similar_recipe=most_similar_recipe
+        )
 
-        # Save the new recipe to the CSV file
-        recipes_df.to_csv(dataset_path, index=False)
-
-        return render_template('restaurantMenuGenerator.html', prompt=prompt, recipes=similar_recipes)
-
-    return render_template('restaurantMenuGenerator.html', prompt='', recipes=None)
+    return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None, most_similar_recipe=None)
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():
     random_recipes = recipes_df.sample(n=10)
-    random_recipes_list = random_recipes[['name', 'amount', 'description']].to_dict(orient='records')
+    random_recipes_list = random_recipes[['name', 'amount', 'description', 'id', 'minutes', 'contributor_id', 'submitted', 'tags', 'nutrition', 'n_steps', 'steps', 'ingredients', 'n_ingredients']].to_dict(orient='records')
     return jsonify(random_recipes_list)
 
 if __name__ == "__main__":
