@@ -51,16 +51,16 @@ def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budg
     for idx in top_indices:
         recipe = recipes_df.iloc[idx]
 
-        # Filter out recipes based on dietary restrictions
+        # Filter out recipes based on dietary restrictions in tags
         if dietary_restrictions:
             restrictions = dietary_restrictions.split(',')
-            if any(restriction.strip().lower() in recipe['description'].lower() for restriction in restrictions):
+            if any(restriction.strip().lower() not in recipe['tags'].lower() for restriction in restrictions):
                 continue
 
-        # Prefer recipes with eating habits
+        # Prefer recipes with specific eating habits in tags
         if eating_habits:
             habits = eating_habits.split(',')
-            if not any(habit.strip().lower() in recipe['description'].lower() for habit in habits):
+            if not any(habit.strip().lower() in recipe['tags'].lower() for habit in habits):
                 continue
 
         # Filter based on budget (within a range of ±20)
@@ -129,11 +129,16 @@ def home():
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
         recipes_df.to_csv(dataset_path, index=False)  # Save the full dataset back to CSV
 
-        # Pass only the generated recipe to the template
-        return render_template('restaurantMenuGenerator.html', recipes=similar_recipes, new_recipe=new_recipe_data)
+        # Pass the generated recipe, similar recipes, and most similar recipe to the template
+        return render_template(
+            'restaurantMenuGenerator.html', 
+            recipes=similar_recipes, 
+            new_recipe=new_recipe_data,
+            most_similar_recipe=most_similar_recipe
+        )
 
     # Render template with no recipes if GET request
-    return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None)
+    return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None, most_similar_recipe=None)
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():

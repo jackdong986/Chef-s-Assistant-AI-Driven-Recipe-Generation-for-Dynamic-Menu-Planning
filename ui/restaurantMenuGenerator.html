@@ -177,6 +177,17 @@
         </div>
         {% endif %}
 
+        {% if most_similar_recipe %}
+        <div id="most-similar-recipe">
+            <h2>Most Similar Recipe:</h2>
+            <div class="menu-item">
+                <h3>{{ most_similar_recipe.name }}</h3>
+                <p><strong>Item Price:</strong> ${{ most_similar_recipe.amount }}</p>
+                <p><strong>Description:</strong> {{ most_similar_recipe.description }}</p>
+            </div>
+        </div>
+        {% endif %}
+
         <h2>Generate Random Recipe:</h2>
         <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
         <div id="random-recipes" class="random-recipe"></div>
