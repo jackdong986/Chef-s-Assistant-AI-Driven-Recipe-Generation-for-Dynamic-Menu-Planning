@@ -7,56 +7,74 @@
     <title>Chef Recipe Flow</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 20px;
-            color: #333333;
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa; /* Light background */
+            margin: 0;
+            padding: 20px;
+            color: #343a40; /* Dark text for contrast */
         }
 
         .container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            background-color: #ffffff;
-            padding: 20px;
+            max-width: 800px; /* Limit width for better readability */
+            margin: auto;
+            background-color: #ffffff; /* White background for content area */
+            padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1); /* Soft shadow */
+        }
+
+        h2 {
+            text-align: center;
+            color: #007bff; /* Restaurant theme color */
+            margin-bottom: 20px;
         }
 
         button {
             margin: 10px;
-            padding: 10px 20px;
+            padding: 12px 25px; /* Slightly larger buttons */
             font-size: 16px;
             cursor: pointer;
-            background-color: #28a745;
+            background-color: #28a745; /* Green button color */
             color: #ffffff;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s ease;
+            width: 100%; /* Full-width buttons for consistency */
         }
 
         button:hover {
-            background-color: #218838;
+            background-color: #218838; /* Darker green on hover */
         }
 
         .recipe-list,
         .recipe-steps {
-            background-color: #e9ecef;
+            background-color: #e9ecef; /* Light gray for recipe containers */
             padding: 15px;
             border-radius: 10px;
+            margin-top: 20px; /* Space between sections */
             color: #333333;
         }
 
         #searchBar {
-            padding: 10px;
-            width: 300px;
+            padding: 12px;
+            width: calc(100% - 24px); /* Full width minus padding */
             font-size: 16px;
-            background-color: #ffffff;
+            background-color: #ffffff; /* White background for input */
             color: #333333;
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 20px;
+        }
+
+        @media (min-width: 600px) {
+            #searchResults {
+                display: flex;
+                flex-wrap: wrap; /* Allow buttons to wrap on larger screens */
+            }
+            #searchResults button {
+                flex: 1 1 calc(33% - 20px); /* Responsive button sizes */
+                margin: 10px;
+            }
         }
     </style>
 </head>
