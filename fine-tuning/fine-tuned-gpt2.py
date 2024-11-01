@@ -9,7 +9,7 @@ tokenizer.pad_token = tokenizer.eos_token  # Set EOS token as padding
 # Load the dataset and use a subset for training to reduce load
 dataset_path = "recipe_generation_dataset.txt"
 dataset = load_dataset('text', data_files={'train': dataset_path})
-dataset['train'] = dataset['train'].shuffle(seed=42).select(range(1000))  # Adjust the range as needed
+dataset['train'] = dataset['train'].shuffle(seed=42).select(range(10000))  # Adjust the range as needed
 
 # Tokenize the dataset with reduced max_length
 def tokenize_function(examples):
