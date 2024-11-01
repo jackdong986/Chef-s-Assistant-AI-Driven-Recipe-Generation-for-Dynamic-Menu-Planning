@@ -1,0 +1,29 @@
+from sentence_transformers import SentenceTransformer, InputExample, losses
+from torch.utils.data import DataLoader
+import pandas as pd
+
+# Load the pre-trained model
+model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+
+# Load similarity pairs dataset
+similarity_df = pd.read_csv("recipe_similarity_pairs.csv")
+
+# Prepare training examples
+train_examples = [
+    InputExample(texts=[row['text_a'], row['text_b']], label=float(row['score']))
+    for _, row in similarity_df.iterrows()
+]
+
+# Set up DataLoader and define Cosine Similarity Loss
+train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=16)
+train_loss = losses.CosineSimilarityLoss(model)
+
+# Fine-tune MiniLM
+model.fit(
+    train_objectives=[(train_dataloader, train_loss)],
+    epochs=3,
+    show_progress_bar=True
+)
+
+# Save the fine-tuned model
+model.save("fine-tuned-minilm-similarity")
