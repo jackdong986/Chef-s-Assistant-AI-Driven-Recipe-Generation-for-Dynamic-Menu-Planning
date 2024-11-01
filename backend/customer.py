@@ -8,10 +8,14 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__, template_folder='../ui')
 
-pipe = pipeline("text-generation", model="openai-community/gpt2-large")
+#pipe = pipeline("text-generation", model="openai-community/gpt2-large")
+pipe = pipeline("text-generation", model="fine-tuned-gpt2-recipe")
 
-tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+#tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+#model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+tokenizer = AutoTokenizer.from_pretrained("fine-tuned-minilm-similarity")
+model = AutoModel.from_pretrained("fine-tuned-minilm-similarity")
+
 
 dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
 
@@ -44,15 +48,15 @@ def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budg
             continue
         elif isinstance(tags, str):
             try:
-                tags = eval(tags)  # Convert string representation to a list
+                tags = eval(tags)  
                 if not isinstance(tags, list):
-                    continue  # Skip if eval returns something other than a list
+                    continue  
             except:
-                continue  # Skip if eval fails
-        elif not isinstance(tags, list):  # Skip if tags is not a list
+                continue  
+        elif not isinstance(tags, list): 
             continue
 
-        tags = [str(tag).lower() for tag in tags]  # Ensure all tags are lowercase strings
+        tags = [str(tag).lower() for tag in tags]  
 
         # Filter based on dietary restrictions
         if dietary_restrictions:
@@ -69,12 +73,12 @@ def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budg
         # Filter based on budget
         if budget:
             try:
-                recipe_amount = float(recipe['amount'])  # Convert amount to float
+                recipe_amount = float(recipe['amount'])  
                 budget = float(budget)
                 if not (budget - 20 <= recipe_amount <= budget + 20):
                     continue
             except ValueError:
-                continue  # Skip if conversion fails
+                continue  
 
         # Encode recipe name and add to embeddings list
         recipe_embedding = encode_text(recipe['name'])
@@ -115,18 +119,18 @@ def home():
         name_prompt = f"Dish name: {prompt}."
         description_prompt = f"An enticing description of {prompt}, focusing on flavors and textures."
 
-        tags_prompt = f"Relevant tags for a dish called '{prompt}'."
+        tags_prompt = f"'{prompt}'"
         steps_prompt = f"Step-by-step guide for making '{prompt}' in 10 steps or less."
         ingredients_prompt = f"List the ingredients needed for {prompt}."
 
         # Generate each part of the recipe using GPT-2
-        name = pipe(name_prompt, max_length=10, num_return_sequences=1)[0]['generated_text'].strip()
-        description = pipe(description_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].strip()
+        name = pipe(name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
+        name = name[:20]
+        description = pipe(description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
         tags = pipe(tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
         steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
         ingredients = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
-        # Add the new recipe to the dataframe with all fields
         new_recipe_data = {
             'name': name,
             'id': random.randint(100000, 999999),  # Generate a random unique id
@@ -134,8 +138,6 @@ def home():
             'contributor_id': random.randint(1000, 9999),  # Random contributor id
             'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  # Current date
             'tags': ', '.join(tags),  # Join tags list into a string
-            
-            # Generated values and randomly assigned fields
             'nutrition': [random.randint(100, 500) for _ in range(7)],  
             'n_steps': len(steps),  
             'steps': steps,  
@@ -145,9 +147,8 @@ def home():
             'amount': random.randint(50, 200),  
         }
 
-        # Append the new recipe to the DataFrame and save
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
-        recipes_df.to_csv(dataset_path, index=False)  # Save the full dataset back to CSV
+        recipes_df.to_csv(dataset_path, index=False)  
 
         return render_template(
             'restaurantMenuGenerator.html', 

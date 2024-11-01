@@ -58,4 +58,7 @@ To get started with the project, follow these steps:
    ```sh
    https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions/data
    
+   or
+
+   https://drive.google.com/file/d/1GnGDxejJjNbnhYn0Gm6v7S9IOKetM4vX/view?usp=sharing
 

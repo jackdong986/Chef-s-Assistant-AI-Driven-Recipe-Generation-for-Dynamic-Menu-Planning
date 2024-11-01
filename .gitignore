@@ -1,2 +1,5 @@
 recipe_generation_dataset.txt
 recipe_similarity_pairs.csv
+fine-tuned-minilm-similarity
+gpt2-finetuned-recipes
+fine-tuned-gpt2-recipe
