@@ -54,11 +54,13 @@ To get started with the project, follow these steps:
    ```sh
    https://github.com/jackdong986/ResMenuFYP.git
 
-2. Download the Dataset fromm Kaggle:
+2. Download the Dataset fromm Kaggle (without amount column):
    ```sh
    https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions/data
-   
+
+   ```
    or
-
+   With amount column:
+   ```sh
    https://drive.google.com/file/d/1GnGDxejJjNbnhYn0Gm6v7S9IOKetM4vX/view?usp=sharing
-
+   ```

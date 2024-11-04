@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,59 +7,55 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f8f9fa; /* Light background */
-            margin: 0;
+            background-color: #f8f9fa;
             padding: 20px;
-            color: #343a40; /* Dark text for contrast */
+            color: #343a40;
         }
 
         .container {
-            max-width: 800px; /* Limit width for better readability */
+            max-width: 800px;
             margin: auto;
-            background-color: #ffffff; /* White background for content area */
+            background-color: #ffffff;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1); /* Soft shadow */
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
         }
 
         h2 {
             text-align: center;
-            color: #007bff; /* Restaurant theme color */
+            color: #007bff;
             margin-bottom: 20px;
         }
 
         button {
             margin: 10px;
-            padding: 12px 25px; /* Slightly larger buttons */
+            padding: 12px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #28a745; /* Green button color */
+            background-color: #28a745;
             color: #ffffff;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s ease;
-            width: 100%; /* Full-width buttons for consistency */
+            width: 100%;
         }
 
         button:hover {
-            background-color: #218838; /* Darker green on hover */
+            background-color: #218838;
         }
 
-        .recipe-list,
-        .recipe-steps {
-            background-color: #e9ecef; /* Light gray for recipe containers */
+        .recipe-list, .recipe-steps {
+            background-color: #e9ecef;
             padding: 15px;
             border-radius: 10px;
-            margin-top: 20px; /* Space between sections */
+            margin-top: 20px;
             color: #333333;
         }
 
         #searchBar {
             padding: 12px;
-            width: calc(100% - 24px); /* Full width minus padding */
+            width: calc(100% - 24px);
             font-size: 16px;
-            background-color: #ffffff; /* White background for input */
-            color: #333333;
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 20px;
@@ -69,79 +64,80 @@
         @media (min-width: 600px) {
             #searchResults {
                 display: flex;
-                flex-wrap: wrap; /* Allow buttons to wrap on larger screens */
+                flex-wrap: wrap;
             }
             #searchResults button {
-                flex: 1 1 calc(33% - 20px); /* Responsive button sizes */
+                flex: 1 1 calc(33% - 20px);
                 margin: 10px;
             }
         }
     </style>
 </head>
-
 <body>
-
     <div class="container">
         <h2>Chef Recipe Generator</h2>
 
         <input type="text" id="searchBar" placeholder="Search for a recipe..." oninput="filterRecipes()" />
-        <button onclick="searchRecipe()">Search</button>
-        <button onclick="generateRandomRecipe()">Generate Random Food Recipe</button>
+        <button onclick="searchRecipe()">Search Recipe</button>
+        <button onclick="generateRandomRecipe()">Generate Random Recipe</button>
 
-        <div id="randomRecipe" class="recipe-steps">
-            <h3>Random Recipe:</h3>
-            <p id="randomRecipeTitle">Recipe Name</p>
+        <div id="randomRecipe" class="recipe-steps" style="display: none;">
+            <h3>Random Recipe</h3>
+            <p id="randomRecipeName">Recipe Name</p>
             <p><strong>Steps:</strong></p>
             <p id="randomRecipeSteps">1. Step one...<br>2. Step two...</p>
         </div>
 
-        <div id="searchResults" class="recipe-list">
-            <h3>Select a Recipe:</h3>
-            <button onclick="viewRecipe('Recipe 1')">Recipe 1</button>
-            <button onclick="viewRecipe('Recipe 2')">Recipe 2</button>
-            <button onclick="viewRecipe('Recipe 3')">Recipe 3</button>
-            <button onclick="viewRecipe('Recipe 4')">Recipe 4</button>
-            <button onclick="viewRecipe('Recipe 5')">Recipe 5</button>
-            <button onclick="viewRecipe('Recipe 6')">Recipe 6</button>
-            <button onclick="viewRecipe('Recipe 7')">Recipe 7</button>
-            <button onclick="viewRecipe('Recipe 8')">Recipe 8</button>
-            <button onclick="viewRecipe('Recipe 9')">Recipe 9</button>
-            <button onclick="viewRecipe('Recipe 10')">Recipe 10</button>
+        <div id="searchResults" class="recipe-list" style="display: none;">
+            <h3>Similar Recipes</h3>
+            <div id="similarRecipesList">
+                <!-- Similar recipes  -->
+            </div>
         </div>
 
-        <div id="selectedRecipe" class="recipe-steps">
-            <h3>Selected Recipe:</h3>
-            <p id="selectedRecipeTitle">Recipe Name</p>
-            <p><strong>Steps:</strong></p>
-            <p id="selectedRecipeSteps">1. Step one...<br>2. Step two...</p>
+        <div id="generatedSteps" class="recipe-steps" style="display: none;">
+            <h3>Generated Recipe Steps</h3>
+            <p id="generatedRecipeSteps">Generated steps will appear here...</p>
         </div>
     </div>
 
     <script>
         function generateRandomRecipe() {
-            document.getElementById('randomRecipeTitle').textContent = 'Random Recipe Name';
-            document.getElementById('randomRecipeSteps').innerHTML = '1. Random Step one...<br>2. Random Step two...';
-            document.getElementById('randomRecipe').style.display = 'block';
-            document.getElementById('searchResults').style.display = 'none';
-            document.getElementById('selectedRecipe').style.display = 'none';
+            fetch('/random')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('randomRecipeName').textContent = data.name;
+                    document.getElementById('randomRecipeSteps').textContent = data.steps;
+                    document.getElementById('randomRecipe').style.display = 'block';
+                    document.getElementById('searchResults').style.display = 'none';
+                    document.getElementById('generatedSteps').style.display = 'none';
+                });
         }
 
         function searchRecipe() {
-            document.getElementById('searchResults').style.display = 'flex';
-            document.getElementById('randomRecipe').style.display = 'none';
-            document.getElementById('selectedRecipe').style.display = 'none';
-        }
+            const searchInput = document.getElementById('searchBar').value;
+            fetch('/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: searchInput }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('generatedRecipeSteps').textContent = data.generated_steps;
+                const similarRecipes = data.similar_recipes.map(recipe => `<button>${recipe[0]}</button>`).join('');
+                document.getElementById('similarRecipesList').innerHTML = similarRecipes;
 
-        function viewRecipe(recipeName) {
-            document.getElementById('selectedRecipeTitle').textContent = recipeName;
-            document.getElementById('selectedRecipeSteps').innerHTML = '1. ' + recipeName + ' Step one...<br>2. ' + recipeName + ' Step two...';
-            document.getElementById('selectedRecipe').style.display = 'block';
-            document.getElementById('searchResults').style.display = 'none';
+                document.getElementById('searchResults').style.display = 'block';
+                document.getElementById('generatedSteps').style.display = 'block';
+                document.getElementById('randomRecipe').style.display = 'none';
+            });
         }
 
         function filterRecipes() {
             const input = document.getElementById('searchBar').value.toLowerCase();
-            const buttons = document.querySelectorAll('#searchResults button');
+            const buttons = document.querySelectorAll('#similarRecipesList button');
             buttons.forEach(button => {
                 if (button.textContent.toLowerCase().includes(input)) {
                     button.style.display = '';
@@ -151,7 +147,5 @@
             });
         }
     </script>
-
 </body>
-
 </html>

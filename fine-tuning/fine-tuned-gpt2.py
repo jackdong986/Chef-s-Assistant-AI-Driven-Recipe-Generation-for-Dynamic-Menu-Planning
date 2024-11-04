@@ -1,15 +1,14 @@
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, DataCollatorForLanguageModeling, Trainer, TrainingArguments
 from datasets import load_dataset
 
-# Load the GPT-2 model and tokenizer (keep the same size)
+# Load the GPT-2 model and tokenizer 
 model = GPT2LMHeadModel.from_pretrained("gpt2")
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 tokenizer.pad_token = tokenizer.eos_token  # Set EOS token as padding
 
-# Load the dataset and use a subset for training to reduce load
 dataset_path = "recipe_generation_dataset.txt"
 dataset = load_dataset('text', data_files={'train': dataset_path})
-dataset['train'] = dataset['train'].shuffle(seed=42).select(range(1000))  # Adjust the range as needed
+dataset['train'] = dataset['train'].shuffle(seed=42).select(range(10000))  # Adjust the range as needed
 
 # Tokenize the dataset with reduced max_length
 def tokenize_function(examples):
@@ -40,7 +39,7 @@ training_args = TrainingArguments(
     save_total_limit=2,
     logging_dir='./logs',
     logging_steps=100,
-    fp16=True  # Enable mixed precision if supported
+    fp16=True  # Enable mixed precision
 )
 
 # Set up Trainer for fine-tuning
