@@ -125,7 +125,6 @@ def home():
 
         # Generate each part of the recipe using GPT-2
         name = pipe(name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-        name = name[:20]
         description = pipe(description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
         tags = pipe(tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
         steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
@@ -133,10 +132,10 @@ def home():
 
         new_recipe_data = {
             'name': name,
-            'id': random.randint(100000, 999999),  # Generate a random unique id
-            'minutes': random.randint(15, 60),  # Random preparation time
-            'contributor_id': random.randint(1000, 9999),  # Random contributor id
-            'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  # Current date
+            'id': random.randint(100000, 999999), 
+            'minutes': random.randint(15, 60),  
+            'contributor_id': random.randint(1000, 9999), 
+            'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  
             'tags': ', '.join(tags),  # Join tags list into a string
             'nutrition': [random.randint(100, 500) for _ in range(7)],  
             'n_steps': len(steps),  
