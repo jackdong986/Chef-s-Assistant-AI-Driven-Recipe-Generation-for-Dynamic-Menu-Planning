@@ -9,6 +9,37 @@
             background-color: #E6F7FF;
             margin: 0;
             padding: 0;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background-color: #00509E;
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+            position: fixed;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            display: block;
+            font-size: 16px;
+            border-bottom: 1px solid #003d7e;
+        }
+
+        .sidebar a:hover {
+            background-color: #003d7e;
+        }
+
+        .content {
+            margin-left: 220px;
+            padding: 20px;
+            width: calc(100% - 220px);
         }
 
         .container {
@@ -43,6 +74,11 @@
             border: 1px solid #ccc;
             border-radius: 5px;
             margin-bottom: 20px;
+        }
+
+        input::placeholder {
+            color: #aaa;
+            font-style: italic;
         }
 
         input[type="submit"] {
@@ -131,26 +167,35 @@
 </head>
 
 <body>
-    <div class="container">
-        <h1>Restaurant Food item with it's food price and description</h1>
-        <form method="post" action="/">
-            <label for="prompt">Enter your food:</label>
-            <input type="text" id="prompt" name="prompt" required>
+    <div class="sidebar">
+        <a href="javascript:void(0);" onclick="showContent('exist')">Exist Recipes</a>
+        <a href="javascript:void(0);" onclick="showContent('newly')">Newly Recipes</a>
+        <a href="javascript:void(0);" onclick="showContent('random')">Random Recipes</a>
+    </div>
 
-            <label for="dietary_restrictions">Dietary Restrictions (Exclude):</label>
-            <input type="text" id="dietary_restrictions" name="dietary_restrictions">
+    <div class="content">
+        <div class="container">
+            <h1>Restaurant Food item with its food price and description</h1>
+            <form method="post" action="/">
+                <label for="prompt">Enter your food:</label>
+                <input type="text" id="prompt" name="prompt" placeholder="E.g., Spaghetti Bolognese" required>
 
-            <label for="eating_habits">Eating Habits (Include):</label>
-            <input type="text" id="eating_habits" name="eating_habits">
+                <label for="dietary_restrictions">Dietary Restrictions (Exclude):</label>
+                <input type="text" id="dietary_restrictions" name="dietary_restrictions"
+                    placeholder="E.g., No peanuts, no dairy">
 
-            <label for="budget">Budget:</label>
-            <input type="text" id="budget" name="budget">
+                <label for="eating_habits">Eating Habits (Include):</label>
+                <input type="text" id="eating_habits" name="eating_habits" placeholder="E.g., Vegetarian, Low-carb">
 
-            <input type="submit" value="Generate Menu">
-        </form>
+                <label for="budget">Budget (RM):</label>
+                <input type="text" id="budget" name="budget" placeholder="E.g., 20">
 
-        {% if recipes %}
-        <div id="menu-section">
+                <input type="submit" value="Generate Menu">
+            </form>
+        </div>
+
+        <div id="exist-recipes" class="content-section">
+            {% if recipes %}
             <h2>Exist Recipe:</h2>
             <div id="menu-container">
                 {% for recipe in recipes %}
@@ -161,37 +206,44 @@
                 </div>
                 {% endfor %}
             </div>
+            {% endif %}
         </div>
-        {% endif %}
 
-        {% if new_recipe %}
-        <div id="new-recipe-section">
+        <div id="newly-recipes" class="content-section" style="display:none;">
+            {% if new_recipe %}
             <h2>Newly Recipe:</h2>
             <div class="menu-item">
                 <h3>{{ new_recipe.name }}</h3>
                 <p><strong>Item Price: RM</strong> {{ new_recipe.amount }}</p>
                 <p><strong>Description:</strong> {{ new_recipe.description }}</p>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
 
-        <!-- {% if most_similar_recipe %}
-        <div id="most-similar-recipe">
-            <h2>Most Similar Recipe:</h2>
-            <div class="menu-item">
-                <h3>{{ most_similar_recipe.name }}</h3>
-                <p><strong>Item Price:</strong> ${{ most_similar_recipe.amount }}</p>
-                <p><strong>Description:</strong> {{ most_similar_recipe.description }}</p>
-            </div>
+        <div id="random-recipes" class="content-section" style="display:none;">
+            <h2>Generate Random Recipe:</h2>
+            <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
+            <div id="random-recipes-list" class="random-recipe"></div>
         </div>
-        {% endif %} -->
-
-        <h2>Generate Random Recipe:</h2>
-        <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
-        <div id="random-recipes" class="random-recipe"></div>
     </div>
 
     <script>
+        function showContent(section) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(function (el) {
+                el.style.display = 'none';
+            });
+
+            // Show the selected section
+            if (section === 'exist') {
+                document.getElementById('exist-recipes').style.display = 'block';
+            } else if (section === 'newly') {
+                document.getElementById('newly-recipes').style.display = 'block';
+            } else if (section === 'random') {
+                document.getElementById('random-recipes').style.display = 'block';
+            }
+        }
+
         function fetchRandomRecipes() {
             fetch('/generate_random_recipe')
                 .then(response => response.json())
@@ -204,10 +256,15 @@
                             <p><strong>Description:</strong>${recipe.description}</p>
                         </div>`;
                     });
-                    document.getElementById('random-recipes').innerHTML = randomRecipesHtml;
+                    document.getElementById('random-recipes-list').innerHTML = randomRecipesHtml;
                 })
                 .catch(error => console.error('Error fetching random recipes:', error));
         }
+
+        // Show Exist Recipes by default on load
+        window.onload = function () {
+            showContent('exist');
+        };
     </script>
 </body>
 
