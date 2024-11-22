@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chef Recipe Flow</title>
+    <title>Chef Recipe Generator</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f8f9fa;
             padding: 20px;
-            color: #343a40;
+            color: #003d7e;
         }
 
         .container {
@@ -23,7 +23,7 @@
 
         h2 {
             text-align: center;
-            color: #007bff;
+            color: #003d7e;
             margin-bottom: 20px;
         }
 
@@ -32,8 +32,8 @@
             padding: 12px;
             font-size: 16px;
             cursor: pointer;
-            background-color: #28a745;
-            color: #ffffff;
+            background-color: #FFD500;
+            color: #003d7e;
             border: none;
             border-radius: 5px;
             transition: background-color 0.3s ease;
@@ -41,24 +41,35 @@
         }
 
         button:hover {
-            background-color: #218838;
+            background-color: #e5be00;
         }
 
         .recipe-list, .recipe-steps {
-            background-color: #e9ecef;
+            background-color: #003d7e;
+            color: #ffffff;
             padding: 15px;
             border-radius: 10px;
             margin-top: 20px;
-            color: #333333;
         }
 
         #searchBar {
             padding: 12px;
             width: calc(100% - 24px);
             font-size: 16px;
-            border: 1px solid #ccc;
+            border: 1px solid #FFD500;
             border-radius: 5px;
             margin-bottom: 20px;
+        }
+
+        #loadingIndicator {
+            text-align: center;
+            color: #FFD500;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        #ingredientsList {
+            margin-top: 20px;
         }
 
         @media (min-width: 600px) {
@@ -76,45 +87,42 @@
 <body>
     <div class="container">
         <h2>Chef Recipe Generator</h2>
-
         <input type="text" id="searchBar" placeholder="Search for a recipe..." oninput="filterRecipes()" />
         <button onclick="searchRecipe()">Search Recipe</button>
         <button onclick="generateRandomRecipe()">Generate Random Recipe</button>
 
-        <div id="randomRecipe" class="recipe-steps" style="display: none;">
-            <h3>Random Recipe</h3>
-            <p id="randomRecipeName">Recipe Name</p>
-            <p><strong>Steps:</strong></p>
-            <p id="randomRecipeSteps">1. Step one...<br>2. Step two...</p>
-        </div>
-
+        <!-- Recipe List Section -->
         <div id="searchResults" class="recipe-list" style="display: none;">
-            <h3>Similar Recipes</h3>
-            <div id="similarRecipesList">
-                <!-- Similar recipes  -->
-            </div>
+            <h3>Recipes</h3>
+            <div id="similarRecipesList"></div>
         </div>
 
-        <div id="generatedSteps" class="recipe-steps" style="display: none;">
-            <h3>Generated Recipe Steps</h3>
-            <p id="generatedRecipeSteps">Generated steps will appear here...</p>
+        <!-- Recipe Details Section -->
+        <div id="recipeDetails" class="recipe-steps" style="display: none;">
+            <h3 id="recipeName">Recipe Name</h3>
+            <h4>Ingredients:</h4>
+            <ul id="recipeIngredientsList"></ul>
+            <h4>Steps:</h4>
+            <ol id="recipeStepsList"></ol>
+            <button onclick="goBack()">Go Back</button>
         </div>
+
+        <div id="loadingIndicator" style="display: none;">Loading...</div>
     </div>
 
     <script>
         function generateRandomRecipe() {
+            showLoading();
             fetch('/random')
                 .then(response => response.json())
                 .then(data => {
-                    document.getElementById('randomRecipeName').textContent = data.name;
-                    document.getElementById('randomRecipeSteps').textContent = data.steps;
-                    document.getElementById('randomRecipe').style.display = 'block';
-                    document.getElementById('searchResults').style.display = 'none';
-                    document.getElementById('generatedSteps').style.display = 'none';
+                    hideLoading();
+                    displayRecipes(data);
                 });
         }
 
         function searchRecipe() {
+            showLoading();
             const searchInput = document.getElementById('searchBar').value;
             fetch('/generate', {
                 method: 'POST',
@@ -123,16 +131,53 @@
                 },
                 body: JSON.stringify({ prompt: searchInput }),
             })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('generatedRecipeSteps').textContent = data.generated_steps;
-                const similarRecipes = data.similar_recipes.map(recipe => `<button>${recipe[0]}</button>`).join('');
-                document.getElementById('similarRecipesList').innerHTML = similarRecipes;
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    displayRecipes(data.similar_recipes);
+                });
+        }
 
-                document.getElementById('searchResults').style.display = 'block';
-                document.getElementById('generatedSteps').style.display = 'block';
-                document.getElementById('randomRecipe').style.display = 'none';
-            });
+        function displayRecipes(recipes) {
+            const recipeList = document.getElementById('similarRecipesList');
+            recipeList.innerHTML = recipes
+                .map((recipe, index) => `<button onclick="viewRecipeDetails(${index})">${recipe.name || recipe}</button>`)
+                .join('');
+            document.getElementById('searchResults').style.display = 'block';
+            document.getElementById('recipeDetails').style.display = 'none';
+        }
+
+        function viewRecipeDetails(index) {
+            showLoading();
+            fetch(`/recipe_details?index=${index}`)
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+
+                    document.getElementById('recipeName').textContent = data.name;
+                    document.getElementById('recipeIngredientsList').innerHTML = data.ingredients
+                        .map(ingredient => `<li>${ingredient}</li>`)
+                        .join('');
+                    document.getElementById('recipeStepsList').innerHTML = data.steps
+                        .map(step => `<li>${step}</li>`)
+                        .join('');
+
+                    document.getElementById('searchResults').style.display = 'none';
+                    document.getElementById('recipeDetails').style.display = 'block';
+                });
+        }
+
+        function goBack() {
+            document.getElementById('searchResults').style.display = 'block';
+            document.getElementById('recipeDetails').style.display = 'none';
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
         }
 
         function filterRecipes() {
