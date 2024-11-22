@@ -11,26 +11,46 @@
             padding: 0;
             display: flex;
             transition: all 0.3s ease;
+            height: 100%;
         }
 
-        /* Sidebar Styles with Transition */
+        /* Sidebar Styles */
         .sidebar {
             width: 220px;
             background-color: #00509E;
             color: white;
-            height: 100vh;
+            height: 200%;
+            /* Adjust height to match content or viewport */
             display: flex;
             flex-direction: column;
             padding-top: 20px;
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transform: translateX(-220px);
+            /* Hidden by default */
             transition: transform 0.3s ease;
+            /* Smooth opening/closing */
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+            /* Visible when open */
         }
 
         .sidebar.closed {
-            transform: translateX(-100%);
+            transform: translateX(-220px);
+            /* Moves the sidebar off-screen */
+        }
+
+        /* Close Button Style */
+        .sidebar .close-button {
+            text-align: center;
+            font-weight: bold;
+            border-top: 1px solid #003d7e;
+            padding: 15px 20px;
+            cursor: pointer;
         }
 
         .sidebar a {
@@ -62,27 +82,25 @@
 
         /* Content Area */
         .content {
-            margin-left: 220px;
+            flex: 1;
+            /* The content takes up the remaining space */
             padding: 20px;
-            width: calc(100% - 220px);
-            transition: margin-left 0.3s ease;
+            width: 100%;
+            /* Always occupies the full width */
+            transition: padding 0.3s ease;
+            box-sizing: border-box;
+            /* Includes padding in width calculation */
         }
 
-        .content.shifted {
-            margin-left: 0;
-        }
-
-        /* User Input and Menu Section */
+        /* Container Styling */
         .container {
-            width: 50%;
-            margin: auto;
-            overflow: hidden;
-            padding: 20px;
-            background: #FFFFFF;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background: white;
+            padding: 30px;
+            margin: 20px auto;
             border-radius: 10px;
-            margin-top: 50px;
-            border: 1px solid #E0E0E0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+            width: 80%;
         }
 
         h1 {
@@ -128,6 +146,8 @@
 
         h2 {
             color: #00509E;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
         /* Menu Item Styling */
@@ -139,7 +159,7 @@
             margin-top: 10px;
         }
 
-        .button {
+        .button-random {
             background: #00509E;
             color: #fff;
             padding: 12px 20px;
@@ -149,9 +169,43 @@
             font-size: 18px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+
+            /* Center the button */
+            display: block;
+            margin: 20px auto;
+            /* Horizontally center */
+            text-align: center;
+            /* Ensure text is centered within the button */
         }
 
-        .button:hover {
+        .button-random:hover {
+            background: #003d7e;
+            transform: translateY(-2px);
+        }
+
+
+        /* Button for Sidebar Toggle */
+        .button-sidebar {
+            background: #00509E;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+            /* Position the button near the left edge */
+            position: fixed;
+            top: 0%;
+            /* Adjust vertical position */
+            left: 2px;
+            /* Close to the left edge */
+            z-index: 1100;
+            /* Ensure it's on top of other elements */
+        }
+
+        .button-sidebar:hover {
             background: #003d7e;
             transform: translateY(-2px);
         }
@@ -181,7 +235,6 @@
 </head>
 
 <body>
-    <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <a href="javascript:void(0);" onclick="showContent('exist')" class="active">
             <span class="sidebar-icon">📄</span>
@@ -195,22 +248,23 @@
             <span class="sidebar-icon">🎲</span>
             <span>Random Recipes</span>
         </a>
+        <a href="javascript:void(0);" onclick="toggleSidebar()" class="close-button">
+            <span class="sidebar-icon">❌</span>
+            <span>Close Menu</span>
+        </a>
     </div>
 
     <!-- Content Area -->
     <div class="content" id="content">
-        <!-- Toggle Sidebar Button -->
-        <button class="button" onclick="toggleSidebar()">🍴 Show/Hide Recipes Menu</button>
-
-        <!-- User Input Form -->
         <h1>Restaurant Food Item with Its Price and Description</h1>
-
-        <div id="input-form">
+        <button class="button-sidebar" id="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="container" id="input-form">
             <form method="post" action="/">
                 <label for="prompt">Enter your food:</label>
                 <input type="text" id="prompt" name="prompt" placeholder="E.g., Spaghetti Bolognese" required>
                 <label for="dietary_restrictions">Dietary Restrictions (Exclude):</label>
-                <input type="text" id="dietary_restrictions" name="dietary_restrictions" placeholder="E.g., No peanuts, no dairy">
+                <input type="text" id="dietary_restrictions" name="dietary_restrictions"
+                    placeholder="E.g., No peanuts, no dairy">
                 <label for="eating_habits">Eating Habits (Include):</label>
                 <input type="text" id="eating_habits" name="eating_habits" placeholder="E.g., Vegetarian, Low-carb">
                 <label for="budget">Budget (RM):</label>
@@ -219,7 +273,7 @@
             </form>
         </div>
 
-        <div id="exist-recipes" class="content-section">
+        <div id="exist-recipes" class="container content-section">
             {% if recipes %}
             <h2>Exist Recipe:</h2>
             <div id="menu-container">
@@ -234,7 +288,7 @@
             {% endif %}
         </div>
 
-        <div id="newly-recipes" class="content-section" style="display:none;">
+        <div id="newly-recipes" class="container content-section" style="display:none;">
             {% if new_recipe %}
             <h2>Newly Recipe:</h2>
             <div class="menu-item">
@@ -246,21 +300,34 @@
         </div>
 
         <!-- Random Recipes Section -->
-        <div id="random-recipes" class="content-section" style="display:none;">
+        <div id="random-recipes" class="container content-section" style="display:none;">
             <h2>Generate Random Recipe:</h2>
-            <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
+            <button class="button-random" onclick="fetchRandomRecipes()">Get Random Recipes</button>
             <div id="random-recipes-list" class="random-recipe"></div>
         </div>
     </div>
 
     <script>
-        // Toggles the sidebar visibility with smooth transition
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const content = document.getElementById('content');
-            sidebar.classList.toggle('closed');
-            content.style.marginLeft = sidebar.classList.contains('closed') ? '0' : '220px';
-        }
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menu-toggle');
+
+    // Toggle sidebar open or closed
+    sidebar.classList.toggle('open');
+
+    // Scroll to the top when opening the sidebar
+    if (sidebar.classList.contains('open')) {
+        window.scrollTo({
+            top: 0,       // Scroll to the very top of the page
+            behavior: 'smooth' // Smooth scrolling effect
+        });
+        menuToggle.style.display = 'none'; // Hide the menu button
+    } else {
+        menuToggle.style.display = 'block'; // Show the menu button
+    }
+}
+
+
 
         // Show the appropriate content section
         function showContent(section) {
