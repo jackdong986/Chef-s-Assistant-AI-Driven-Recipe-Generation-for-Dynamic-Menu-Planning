@@ -9,18 +9,98 @@
             background-color: #E6F7FF;
             margin: 0;
             padding: 0;
+            display: flex;
+            transition: all 0.3s ease;
+            height: 100%;
         }
 
-        .container {
-            width: 50%;
-            margin: auto;
-            overflow: hidden;
+        /* Sidebar Styles */
+        .sidebar {
+            width: 220px;
+            background-color: #00509E;
+            color: white;
+            height: 200%;
+            /* Adjust height to match content or viewport */
+            display: flex;
+            flex-direction: column;
+            padding-top: 20px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            transform: translateX(-220px);
+            /* Hidden by default */
+            transition: transform 0.3s ease;
+            /* Smooth opening/closing */
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+            /* Visible when open */
+        }
+
+        .sidebar.closed {
+            transform: translateX(-220px);
+            /* Moves the sidebar off-screen */
+        }
+
+        /* Close Button Style */
+        .sidebar .close-button {
+            text-align: center;
+            font-weight: bold;
+            border-top: 1px solid #003d7e;
+            padding: 15px 20px;
+            cursor: pointer;
+        }
+
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            border-bottom: 1px solid #003d7e;
+            transition: background 0.3s ease, padding-left 0.3s ease;
+        }
+
+        .sidebar a:hover {
+            background-color: #003d7e;
+            padding-left: 30px;
+        }
+
+        .sidebar a.active {
+            background-color: #FFD500;
+            color: #00509E;
+            font-weight: bold;
+        }
+
+        .sidebar .sidebar-icon {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            /* The content takes up the remaining space */
             padding: 20px;
-            background: #FFFFFF;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            /* Always occupies the full width */
+            transition: padding 0.3s ease;
+            box-sizing: border-box;
+            /* Includes padding in width calculation */
+        }
+
+        /* Container Styling */
+        .container {
+            background: white;
+            padding: 30px;
+            margin: 20px auto;
             border-radius: 10px;
-            margin-top: 50px;
-            border: 1px solid #E0E0E0;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
+            width: 80%;
         }
 
         h1 {
@@ -45,6 +125,11 @@
             margin-bottom: 20px;
         }
 
+        input::placeholder {
+            color: #aaa;
+            font-style: italic;
+        }
+
         input[type="submit"] {
             background: #FFD500;
             color: #00509E;
@@ -61,8 +146,11 @@
 
         h2 {
             color: #00509E;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
+        /* Menu Item Styling */
         .menu-item,
         .random-recipe {
             background: #F2F2F2;
@@ -71,20 +159,58 @@
             margin-top: 10px;
         }
 
-        .button {
+        .button-random {
             background: #00509E;
             color: #fff;
-            padding: 10px;
+            padding: 12px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 18px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+
+            /* Center the button */
+            display: block;
+            margin: 20px auto;
+            /* Horizontally center */
+            text-align: center;
+            /* Ensure text is centered within the button */
         }
 
-        .button:hover {
+        .button-random:hover {
             background: #003d7e;
+            transform: translateY(-2px);
         }
 
+
+        /* Button for Sidebar Toggle */
+        .button-sidebar {
+            background: #00509E;
+            color: #fff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+            /* Position the button near the left edge */
+            position: fixed;
+            top: 0%;
+            /* Adjust vertical position */
+            left: 2px;
+            /* Close to the left edge */
+            z-index: 1100;
+            /* Ensure it's on top of other elements */
+        }
+
+        .button-sidebar:hover {
+            background: #003d7e;
+            transform: translateY(-2px);
+        }
+
+        /* Random Recipe Styling */
         #random-recipes {
             margin-top: 20px;
             padding: 15px;
@@ -98,28 +224,6 @@
             background-color: #F1F1F1;
         }
 
-        .button {
-            background: #00509E;
-            color: #fff;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .button:hover {
-            background: #003d7e;
-            transform: translateY(-2px);
-        }
-
-        .random-recipe {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
         .random-recipe .menu-item {
             background: #E8F5E9;
             border-left: 5px solid #4CAF50;
@@ -131,26 +235,46 @@
 </head>
 
 <body>
-    <div class="container">
-        <h1>Restaurant Food item with it's food price and description</h1>
-        <form method="post" action="/">
-            <label for="prompt">Enter your food:</label>
-            <input type="text" id="prompt" name="prompt" required>
+    <div class="sidebar" id="sidebar">
+        <a href="javascript:void(0);" onclick="showContent('exist')" class="active">
+            <span class="sidebar-icon">📄</span>
+            <span>Exist Recipes</span>
+        </a>
+        <a href="javascript:void(0);" onclick="showContent('newly')">
+            <span class="sidebar-icon">✨</span>
+            <span>Newly Recipes</span>
+        </a>
+        <a href="javascript:void(0);" onclick="showContent('random')">
+            <span class="sidebar-icon">🎲</span>
+            <span>Random Recipes</span>
+        </a>
+        <a href="javascript:void(0);" onclick="toggleSidebar()" class="close-button">
+            <span class="sidebar-icon">❌</span>
+            <span>Close Menu</span>
+        </a>
+    </div>
 
-            <label for="dietary_restrictions">Dietary Restrictions (Exclude):</label>
-            <input type="text" id="dietary_restrictions" name="dietary_restrictions">
+    <!-- Content Area -->
+    <div class="content" id="content">
+        <h1>Restaurant Food Item with Its Price and Description</h1>
+        <button class="button-sidebar" id="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <div class="container" id="input-form">
+            <form method="post" action="/">
+                <label for="prompt">Enter your food:</label>
+                <input type="text" id="prompt" name="prompt" placeholder="E.g., Spaghetti Bolognese" required>
+                <label for="dietary_restrictions">Dietary Restrictions (Exclude):</label>
+                <input type="text" id="dietary_restrictions" name="dietary_restrictions"
+                    placeholder="E.g., No peanuts, no dairy">
+                <label for="eating_habits">Eating Habits (Include):</label>
+                <input type="text" id="eating_habits" name="eating_habits" placeholder="E.g., Vegetarian, Low-carb">
+                <label for="budget">Budget (RM):</label>
+                <input type="text" id="budget" name="budget" placeholder="E.g., 20">
+                <input type="submit" value="Generate Menu">
+            </form>
+        </div>
 
-            <label for="eating_habits">Eating Habits (Include):</label>
-            <input type="text" id="eating_habits" name="eating_habits">
-
-            <label for="budget">Budget:</label>
-            <input type="text" id="budget" name="budget">
-
-            <input type="submit" value="Generate Menu">
-        </form>
-
-        {% if recipes %}
-        <div id="menu-section">
+        <div id="exist-recipes" class="container content-section">
+            {% if recipes %}
             <h2>Exist Recipe:</h2>
             <div id="menu-container">
                 {% for recipe in recipes %}
@@ -161,53 +285,80 @@
                 </div>
                 {% endfor %}
             </div>
+            {% endif %}
         </div>
-        {% endif %}
 
-        {% if new_recipe %}
-        <div id="new-recipe-section">
+        <div id="newly-recipes" class="container content-section" style="display:none;">
+            {% if new_recipe %}
             <h2>Newly Recipe:</h2>
             <div class="menu-item">
                 <h3>{{ new_recipe.name }}</h3>
                 <p><strong>Item Price: RM</strong> {{ new_recipe.amount }}</p>
                 <p><strong>Description:</strong> {{ new_recipe.description }}</p>
             </div>
+            {% endif %}
         </div>
-        {% endif %}
 
-        <!-- {% if most_similar_recipe %}
-        <div id="most-similar-recipe">
-            <h2>Most Similar Recipe:</h2>
-            <div class="menu-item">
-                <h3>{{ most_similar_recipe.name }}</h3>
-                <p><strong>Item Price:</strong> ${{ most_similar_recipe.amount }}</p>
-                <p><strong>Description:</strong> {{ most_similar_recipe.description }}</p>
-            </div>
+        <!-- Random Recipes Section -->
+        <div id="random-recipes" class="container content-section" style="display:none;">
+            <h2>Generate Random Recipe:</h2>
+            <button class="button-random" onclick="fetchRandomRecipes()">Get Random Recipes</button>
+            <div id="random-recipes-list" class="random-recipe"></div>
         </div>
-        {% endif %} -->
-
-        <h2>Generate Random Recipe:</h2>
-        <button class="button" onclick="fetchRandomRecipes()">Get Random Recipes</button>
-        <div id="random-recipes" class="random-recipe"></div>
     </div>
 
     <script>
+        function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menu-toggle');
+
+    // Toggle sidebar open or closed
+    sidebar.classList.toggle('open');
+
+    // Scroll to the top when opening the sidebar
+    if (sidebar.classList.contains('open')) {
+        window.scrollTo({
+            top: 0,       // Scroll to the very top of the page
+            behavior: 'smooth' // Smooth scrolling effect
+        });
+        menuToggle.style.display = 'none'; // Hide the menu button
+    } else {
+        menuToggle.style.display = 'block'; // Show the menu button
+    }
+}
+
+
+
+        // Show the appropriate content section
+        function showContent(section) {
+            document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
+            document.getElementById('input-form').style.display = section === 'random' ? 'none' : 'block';
+            document.getElementById(`${section}-recipes`).style.display = 'block';
+
+            // Update active link
+            document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active'));
+            document.querySelector(`.sidebar a[onclick="showContent('${section}')"]`).classList.add('active');
+        }
+
+        // Fetch random recipes dynamically
         function fetchRandomRecipes() {
             fetch('/generate_random_recipe')
                 .then(response => response.json())
                 .then(data => {
-                    let randomRecipesHtml = '';
-                    data.forEach(function (recipe) {
-                        randomRecipesHtml += `<div class="menu-item">
+                    const recipesHtml = data.map(recipe => `
+                        <div class="menu-item">
                             <h3>${recipe.name}</h3>
                             <p><strong>Item Price: RM</strong> ${recipe.amount}</p>
-                            <p><strong>Description:</strong>${recipe.description}</p>
-                        </div>`;
-                    });
-                    document.getElementById('random-recipes').innerHTML = randomRecipesHtml;
+                            <p><strong>Description:</strong> ${recipe.description}</p>
+                        </div>
+                    `).join('');
+                    document.getElementById('random-recipes-list').innerHTML = recipesHtml;
                 })
                 .catch(error => console.error('Error fetching random recipes:', error));
         }
+
+        // Show Exist Recipes by default on page load
+        window.onload = () => showContent('exist');
     </script>
 </body>
 
