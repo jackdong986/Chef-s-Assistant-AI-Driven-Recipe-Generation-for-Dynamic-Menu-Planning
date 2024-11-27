@@ -116,19 +116,50 @@ def home():
 
         similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
-        name_prompt = f"Dish name: {prompt}."
-        description_prompt = f"An enticing description of {prompt}, focusing on flavors and textures."
+        # Define multiple prompts for each part of the recipe
+        name_prompts = [
+            f"Dish name: {prompt}.",
+            f"Provide a creative name for a dish inspired by {prompt}.",
+            f"Suggest a catchy name for the dish: {prompt}."
+        ]
+        
+        description_prompts = [
+            f"An enticing description of {prompt}, focusing on flavors and textures.",
+            f"Describe {prompt} with an emphasis on its culinary appeal.",
+            f"Write a brief, delicious description of the dish: {prompt}."
+        ]
+        
+        tags_prompts = [
+            f"Relevant tags for '{prompt}' (comma-separated).",
+            f"List keywords or tags associated with the dish {prompt}.",
+            f"Suggest tags for {prompt} focusing on dietary and cuisine types."
+        ]
+        
+        steps_prompts = [
+            f"Step-by-step guide for making '{prompt}' in 10 steps or less.",
+            f"Provide a concise recipe method for {prompt}.",
+            f"Write a simple cooking procedure for the dish {prompt}."
+        ]
+        
+        ingredients_prompts = [
+            f"List the ingredients needed for {prompt}.",
+            f"Provide the ingredient list for the dish {prompt}.",
+            f"Suggest ingredients for making {prompt}."
+        ]
 
-        tags_prompt = f"'{prompt}'"
-        steps_prompt = f"Step-by-step guide for making '{prompt}' in 10 steps or less."
-        ingredients_prompt = f"List the ingredients needed for {prompt}."
+        # Randomly pick one prompt from each category
+        selected_name_prompt = random.choice(name_prompts)
+        selected_description_prompt = random.choice(description_prompts)
+        selected_tags_prompt = random.choice(tags_prompts)
+        selected_steps_prompt = random.choice(steps_prompts)
+        selected_ingredients_prompt = random.choice(ingredients_prompts)
 
         # Generate each part of the recipe using GPT-2
-        name = pipe(name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-        description = pipe(description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-        tags = pipe(tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
-        steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
-        ingredients = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
+        name = pipe(selected_name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
+        description = pipe(selected_description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
+        tags = pipe(selected_tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
+        steps = pipe(selected_steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
+        ingredients = pipe(selected_ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
         new_recipe_data = {
             'name': name,
