@@ -5,6 +5,7 @@ from transformers import AutoTokenizer, AutoModel, pipeline
 import pandas as pd
 import os
 from sklearn.metrics.pairwise import cosine_similarity
+import re
 
 app = Flask(__name__, template_folder='../ui')
 
@@ -27,6 +28,11 @@ else:
         'nutrition', 'n_steps', 'steps', 'description', 'ingredients', 
         'n_ingredients', 'amount'
     ])
+
+def clean_text(text):
+    """Remove content inside parentheses and trim the result."""
+    return re.sub(r"\s*\(.*?\)", "", text).strip()
+
 
 def encode_text(text):
     """Encode text using AutoTokenizer and AutoModel, returning a normalized embedding."""
@@ -116,31 +122,43 @@ def home():
 
         similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
-        # Define multiple prompts for each part of the recipe
+        adjectives = ["hearty", "rich", "flavorful", "delicious", "quick", "spicy", "creamy", "crispy", "easy", "healthy"]
+        occasions = ["family gatherings", "weeknight dinners", "special occasions", "holiday meals", "picnics", "dinner parties", "quick lunch", "meal prep"]
+        meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "midnight snack"]
+
         name_prompts = [
-            f"Dish name: {prompt}.",
-            f"Provide a creative name for a dish inspired by {prompt}.",
-            f"Suggest a catchy name for the dish: {prompt}."
+            f"{prompt} soup recipe.",
+            f"The ultimate {prompt} side dish.",
+            f"{prompt}, a hearty classic.",
+            f"Easy and delicious {prompt} soup.",
+            f"Quick and tasty {prompt}.",
+            f"{prompt} with a twist.",
+            f"Rich and flavorful {prompt}.",
+            f"Homemade {prompt} that delights.",
+            f"{prompt}: A timeless recipe."
         ]
-        
+
         description_prompts = [
-            f"An enticing description of {prompt}, focusing on flavors and textures.",
-            f"Describe {prompt} with an emphasis on its culinary appeal.",
-            f"Write a brief, delicious description of the dish: {prompt}."
+            f"This {prompt} recipe is a {random.choice(adjectives)} dish that’s perfect for {random.choice(occasions)}.",
+            f"A {random.choice(adjectives)} {prompt} dish that’s {random.choice(adjectives)} and {random.choice(adjectives)}.",
+            f"Try this {prompt} for a perfect {random.choice(meal_times)}. It’s easy to make and delicious.",
+            f"Enjoy this {random.choice(adjectives)} {prompt}, a wonderful addition to {random.choice(occasions)}.",
+            f"This {prompt} recipe will impress your guests at {random.choice(occasions)} and is ideal for {random.choice(meal_times)}.",
+            f"Packed with flavor and made in no time, {prompt} is perfect for {random.choice(occasions)}."
         ]
-        
+
         tags_prompts = [
             f"Relevant tags for '{prompt}' (comma-separated).",
             f"List keywords or tags associated with the dish {prompt}.",
             f"Suggest tags for {prompt} focusing on dietary and cuisine types."
         ]
-        
+
         steps_prompts = [
             f"Step-by-step guide for making '{prompt}' in 10 steps or less.",
             f"Provide a concise recipe method for {prompt}.",
             f"Write a simple cooking procedure for the dish {prompt}."
         ]
-        
+
         ingredients_prompts = [
             f"List the ingredients needed for {prompt}.",
             f"Provide the ingredient list for the dish {prompt}.",
@@ -161,6 +179,14 @@ def home():
         steps = pipe(selected_steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
         ingredients = pipe(selected_ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
+        # Clean the generated content
+        name = clean_text(name)
+        description = clean_text(description)
+        tags = [clean_text(tag) for tag in tags if tag.strip()]  # Clean tags and remove empty entries
+        steps = [clean_text(step) for step in steps if step.strip()]  # Clean steps and remove empty entries
+        ingredients = [clean_text(ingredient) for ingredient in ingredients if ingredient.strip()]  # Clean ingredients
+
+        # Create a new recipe entry
         new_recipe_data = {
             'name': name,
             'id': random.randint(100000, 999999), 
@@ -174,9 +200,10 @@ def home():
             'description': description,
             'ingredients': ingredients, 
             'n_ingredients': len(ingredients),  
-            'amount': random.randint(50, 200),  
+            'amount': random.randint(50, 150),  
         }
 
+        # Update the DataFrame and save to CSV
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
         recipes_df.to_csv(dataset_path, index=False)  
 
@@ -188,6 +215,7 @@ def home():
         )
 
     return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None, most_similar_recipe=None)
+
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():
