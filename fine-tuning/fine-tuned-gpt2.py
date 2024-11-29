@@ -25,7 +25,7 @@ tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=
 # Define the data collator
 data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer,
-    mlm=False  # Causal language modeling (GPT-style)
+    mlm=False 
 )
 
 # Define training arguments with optimized settings
@@ -42,7 +42,6 @@ training_args = TrainingArguments(
     fp16=True  # Enable mixed precision
 )
 
-# Set up Trainer for fine-tuning
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -50,9 +49,7 @@ trainer = Trainer(
     train_dataset=tokenized_dataset['train']
 )
 
-# Fine-tune the model
 trainer.train()
 
-# Save the fine-tuned model and tokenizer
 model.save_pretrained("fine-tuned-gpt2-recipe")
 tokenizer.save_pretrained("fine-tuned-gpt2-recipe")

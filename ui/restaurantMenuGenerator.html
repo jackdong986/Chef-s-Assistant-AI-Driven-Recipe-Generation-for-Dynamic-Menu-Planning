@@ -20,7 +20,6 @@
             background-color: #00509E;
             color: white;
             height: 200%;
-            /* Adjust height to match content or viewport */
             display: flex;
             flex-direction: column;
             padding-top: 20px;
@@ -29,19 +28,15 @@
             left: 0;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
             transform: translateX(-220px);
-            /* Hidden by default */
             transition: transform 0.3s ease;
-            /* Smooth opening/closing */
         }
 
         .sidebar.open {
             transform: translateX(0);
-            /* Visible when open */
         }
 
         .sidebar.closed {
             transform: translateX(-220px);
-            /* Moves the sidebar off-screen */
         }
 
         /* Close Button Style */
@@ -83,13 +78,10 @@
         /* Content Area */
         .content {
             flex: 1;
-            /* The content takes up the remaining space */
             padding: 20px;
             width: 100%;
-            /* Always occupies the full width */
             transition: padding 0.3s ease;
             box-sizing: border-box;
-            /* Includes padding in width calculation */
         }
 
         /* Container Styling */
@@ -175,7 +167,6 @@
             margin: 20px auto;
             /* Horizontally center */
             text-align: center;
-            /* Ensure text is centered within the button */
         }
 
         .button-random:hover {
@@ -194,15 +185,10 @@
             cursor: pointer;
             font-size: 18px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
-            /* Position the button near the left edge */
             position: fixed;
             top: 0%;
-            /* Adjust vertical position */
             left: 2px;
-            /* Close to the left edge */
             z-index: 1100;
-            /* Ensure it's on top of other elements */
         }
 
         .button-sidebar:hover {
@@ -318,29 +304,24 @@
     // Scroll to the top when opening the sidebar
     if (sidebar.classList.contains('open')) {
         window.scrollTo({
-            top: 0,       // Scroll to the very top of the page
-            behavior: 'smooth' // Smooth scrolling effect
+            top: 0,       
+            behavior: 'smooth' 
         });
-        menuToggle.style.display = 'none'; // Hide the menu button
+        menuToggle.style.display = 'none';
     } else {
-        menuToggle.style.display = 'block'; // Show the menu button
+        menuToggle.style.display = 'block'; 
     }
 }
 
-
-
-        // Show the appropriate content section
         function showContent(section) {
             document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
             document.getElementById('input-form').style.display = section === 'random' ? 'none' : 'block';
             document.getElementById(`${section}-recipes`).style.display = 'block';
 
-            // Update active link
             document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active'));
             document.querySelector(`.sidebar a[onclick="showContent('${section}')"]`).classList.add('active');
         }
 
-        // Fetch random recipes dynamically
         function fetchRandomRecipes() {
             fetch('/generate_random_recipe')
                 .then(response => response.json())
@@ -357,7 +338,6 @@
                 .catch(error => console.error('Error fetching random recipes:', error));
         }
 
-        // Show Exist Recipes by default on page load
         window.onload = () => showContent('exist');
     </script>
 </body>

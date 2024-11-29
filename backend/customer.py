@@ -172,21 +172,18 @@ def home():
         selected_steps_prompt = random.choice(steps_prompts)
         selected_ingredients_prompt = random.choice(ingredients_prompts)
 
-        # Generate each part of the recipe using GPT-2
         name = pipe(selected_name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
         description = pipe(selected_description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
         tags = pipe(selected_tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
         steps = pipe(selected_steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
         ingredients = pipe(selected_ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
-        # Clean the generated content
         name = clean_text(name)
         description = clean_text(description)
-        tags = [clean_text(tag) for tag in tags if tag.strip()]  # Clean tags and remove empty entries
-        steps = [clean_text(step) for step in steps if step.strip()]  # Clean steps and remove empty entries
-        ingredients = [clean_text(ingredient) for ingredient in ingredients if ingredient.strip()]  # Clean ingredients
+        tags = [clean_text(tag) for tag in tags if tag.strip()]  
+        steps = [clean_text(step) for step in steps if step.strip()] 
+        ingredients = [clean_text(ingredient) for ingredient in ingredients if ingredient.strip()]  
 
-        # Create a new recipe entry
         new_recipe_data = {
             'name': name,
             'id': random.randint(100000, 999999), 
@@ -203,7 +200,6 @@ def home():
             'amount': random.randint(50, 150),  
         }
 
-        # Update the DataFrame and save to CSV
         recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
         recipes_df.to_csv(dataset_path, index=False)  
 

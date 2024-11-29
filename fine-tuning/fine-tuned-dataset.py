@@ -21,8 +21,19 @@ df['steps'] = df['steps'].fillna("").astype(str).str.lower().str.strip()
 # Remove special characters from the 'description'
 df['description'] = df['description'].apply(lambda x: re.sub(r'[^\w\s]', '', x))
 
-# Convert 'tags' into a list and remove extra formatting
-df['tags'] = df['tags'].apply(lambda x: x.strip('[]').replace("'", "").split(', ') if pd.notna(x) else [])
+# Function to clean text fields
+def clean_text(text):
+    text = text.replace("[", "").replace("]", "")  # Remove brackets
+    text = text.replace('"', "").replace("'", "")  # Remove quotes
+    text = text.strip()  # Remove leading/trailing spaces
+    return text
+
+# Apply cleaning to each column
+df['name'] = df['name'].apply(clean_text)
+df['description'] = df['description'].apply(clean_text)
+df['tags'] = df['tags'].apply(lambda x: [clean_text(tag) for tag in x.strip('[]').split(', ') if tag] if x else [])
+df['ingredients'] = df['ingredients'].apply(clean_text)
+df['steps'] = df['steps'].apply(clean_text)
 
 # Remove duplicate recipes based on 'name' and 'description'
 df = df.drop_duplicates(subset=['name', 'description'])
@@ -39,7 +50,7 @@ df['steps'] = df['steps'].apply(lambda x: '. '.join(x.split('.')))
 with open("recipe_generation_dataset.txt", "w", encoding="utf-8") as f:
     for _, row in df.iterrows():
         prompt = f"Generate a recipe for {row['name']}."
-        recipe_text = f"Ingredients: {row['ingredients']}. Steps: {row['steps']}"
+        recipe_text = f"Ingredients: {row['ingredients']}. Steps: {row['steps']}."
         f.write(f"{prompt}\n{recipe_text}\n<|endoftext|>\n")
 
 # Sample data without replacement to create pairs for similarity calculation

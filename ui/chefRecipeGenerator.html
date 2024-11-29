@@ -45,7 +45,8 @@
             background-color: #e5be00;
         }
 
-        .recipe-list, .recipe-steps {
+        .recipe-list,
+        .recipe-steps {
             background-color: #003d7e;
             color: #ffffff;
             padding: 15px;
@@ -107,7 +108,6 @@
             <ul id="recipeIngredientsList"></ul>
             <h4>Steps:</h4>
             <ol id="recipeStepsList"></ol>
-            <button onclick="goBack()">Go Back</button>
         </div>
 
         <div id="loadingIndicator" style="display: none;">Loading...</div>
@@ -125,8 +125,20 @@
         }
 
         function searchRecipe() {
+            const searchInput = document.getElementById('searchBar').value.trim();
+
+            if (!searchInput) {
+                alert("Please enter a recipe name to search.");
+                return;
+            }
+
+            if (/^\d+$/.test(searchInput)) {
+                alert("Recipe name cannot be a number. Please enter a valid name.");
+                return;
+            }
+
             showLoading();
-            const searchInput = document.getElementById('searchBar').value;
+
             fetch('/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -135,20 +147,22 @@
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
-                    displayRecipes(data.similar_recipes, true);
+                    displayRecipes(data.recipes, true);
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert("An error occurred while searching. Please try again.");
                 });
         }
+
+
 
         function displayRecipes(recipes, isSearch) {
             const recipeList = document.getElementById('similarRecipesList');
             recipeList.innerHTML = recipes
-                .map(recipe => `
-                    <div>
-                        <h4>${recipe.name}</h4>
-                        <p><strong>Description:</strong> ${recipe.description}</p>
-                        <button onclick="viewRecipeDetails('${recipe.name}')">View Details</button>
-                    </div>
-                `)
+                .map(recipe =>
+                    `<button onclick="viewRecipeDetails('${recipe.name || recipe}')">${recipe.name || recipe}</button>`
+                )
                 .join('');
             document.getElementById('searchResults').style.display = 'block';
             document.getElementById('recipeDetails').style.display = 'none';
@@ -172,11 +186,6 @@
                 });
         }
 
-        function goBack() {
-            document.getElementById('searchResults').style.display = 'block';
-            document.getElementById('recipeDetails').style.display = 'none';
-        }
-
         function showLoading() {
             document.getElementById('loadingIndicator').style.display = 'block';
         }
@@ -193,6 +202,7 @@
             });
         }
     </script>
+
 </body>
 
 </html>
