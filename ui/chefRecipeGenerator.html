@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -77,6 +78,7 @@
                 display: flex;
                 flex-wrap: wrap;
             }
+
             #searchResults button {
                 flex: 1 1 calc(33% - 20px);
                 margin: 10px;
@@ -84,6 +86,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>Chef Recipe Generator</h2>
@@ -117,43 +120,46 @@
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
-                    displayRecipes(data);
+                    displayRecipes(data, false);
                 });
         }
 
         function searchRecipe() {
             showLoading();
             const searchInput = document.getElementById('searchBar').value;
-            fetch('/generate', {
+            fetch('/search', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ prompt: searchInput }),
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: searchInput })
             })
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
-                    displayRecipes(data.similar_recipes);
+                    displayRecipes(data.similar_recipes, true);
                 });
         }
 
-        function displayRecipes(recipes) {
+        function displayRecipes(recipes, isSearch) {
             const recipeList = document.getElementById('similarRecipesList');
             recipeList.innerHTML = recipes
-                .map((recipe, index) => `<button onclick="viewRecipeDetails(${index})">${recipe.name || recipe}</button>`)
+                .map(recipe => `
+                    <div>
+                        <h4>${recipe.name}</h4>
+                        <p><strong>Description:</strong> ${recipe.description}</p>
+                        <button onclick="viewRecipeDetails('${recipe.name}')">View Details</button>
+                    </div>
+                `)
                 .join('');
             document.getElementById('searchResults').style.display = 'block';
             document.getElementById('recipeDetails').style.display = 'none';
         }
 
-        function viewRecipeDetails(index) {
+        function viewRecipeDetails(name) {
             showLoading();
-            fetch(`/recipe_details?index=${index}`)
+            fetch(`/recipe_details?name=${encodeURIComponent(name)}`)
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
-
                     document.getElementById('recipeName').textContent = data.name;
                     document.getElementById('recipeIngredientsList').innerHTML = data.ingredients
                         .map(ingredient => `<li>${ingredient}</li>`)
@@ -161,9 +167,8 @@
                     document.getElementById('recipeStepsList').innerHTML = data.steps
                         .map(step => `<li>${step}</li>`)
                         .join('');
-
-                    document.getElementById('searchResults').style.display = 'none';
                     document.getElementById('recipeDetails').style.display = 'block';
+                    document.getElementById('searchResults').style.display = 'none';
                 });
         }
 
@@ -184,13 +189,10 @@
             const input = document.getElementById('searchBar').value.toLowerCase();
             const buttons = document.querySelectorAll('#similarRecipesList button');
             buttons.forEach(button => {
-                if (button.textContent.toLowerCase().includes(input)) {
-                    button.style.display = '';
-                } else {
-                    button.style.display = 'none';
-                }
+                button.style.display = button.textContent.toLowerCase().includes(input) ? '' : 'none';
             });
         }
     </script>
 </body>
+
 </html>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 from transformers import pipeline
 from sentence_transformers import SentenceTransformer
 import pandas as pd
@@ -19,49 +19,40 @@ df['steps'] = df['steps'].fillna("").astype(str).str.lower()
 df['ingredients'] = df['ingredients'].fillna("").astype(str).str.lower()
 
 def find_similar_recipes(prompt, top_n=10):
-    """Find top N recipes similar to the prompt."""
-    prompt_embedding = sentence_model.encode(prompt)
-    recipes = []
-
-    for _, row in df.iterrows():
-        combined_text = f"{row['name']} {row['description']}"
-        recipe_embedding = sentence_model.encode(combined_text)
-        similarity_score = sentence_model.similarity(prompt_embedding, recipe_embedding)
-        recipes.append((row['name'], similarity_score))
-
-    recipes = sorted(recipes, key=lambda x: x[1], reverse=True)[:top_n]
-    return [{"name": r[0]} for r in recipes]
+    """Find top N recipes by name or description containing the prompt."""
+    filtered_recipes = df[
+        df['name'].str.contains(prompt, case=False) | df['description'].str.contains(prompt, case=False)
+    ][['name', 'description', 'amount']].head(top_n)
+    return filtered_recipes.to_dict(orient='records')
 
 @app.route('/')
 def home():
-    """Render the main page with the search and random recipe buttons."""
+    """Render the main page."""
     return render_template('chefRecipeGenerator.html')
 
-@app.route('/generate', methods=['POST'])
-def generate_recipe():
-    prompt = request.json.get("prompt")
-    # Generate steps for the recipe
-    steps = pipe(prompt, max_length=150, num_return_sequences=1)[0]['generated_text']
-    # Find similar recipes
+@app.route('/search', methods=['POST'])
+def search_recipe():
+    """Search for existing recipes by prompt."""
+    prompt = request.json.get("prompt", "").lower()
     similar_recipes = find_similar_recipes(prompt)
-    return jsonify({"generated_steps": steps, "similar_recipes": similar_recipes})
+    return jsonify({"similar_recipes": similar_recipes})
 
 @app.route('/random', methods=['GET'])
 def random_recipe():
     """Return 10 random recipes."""
-    random_recipes = df.sample(n=10)
-    recipes = random_recipes[['name', 'ingredients', 'steps']].to_dict(orient='records')
-    return jsonify(recipes)
+    random_recipes = df.sample(n=10)[['name', 'ingredients', 'steps', 'description']].to_dict(orient='records')
+    return jsonify(random_recipes)
 
 @app.route('/recipe_details', methods=['GET'])
 def recipe_details():
-    """Return the details of a specific recipe."""
-    index = int(request.args.get("index"))
-    recipe = df.iloc[index]
+    """Return details of a specific recipe by name."""
+    name = request.args.get("name", "").lower()
+    recipe = df[df['name'] == name].iloc[0]
     return jsonify({
         "name": recipe['name'].title(),
-        "ingredients": recipe['ingredients'].split(", "),
-        "steps": recipe['steps'].split(". ")[:10]  # Ensure min 5, max 10 steps
+        "ingredients": recipe['ingredients'].split(', '),
+        "steps": recipe['steps'].split('. '),
+        "description": recipe['description']
     })
 
 if __name__ == "__main__":
