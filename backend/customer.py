@@ -100,6 +100,8 @@ def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budg
         recipe_embeddings = torch.cat(recipe_embeddings, dim=0)
         similarities = cosine_similarity(prompt_embedding.cpu().numpy(), recipe_embeddings.cpu().numpy())
         similarity_scores = similarities[0]
+        for i, score in enumerate(similarity_scores):
+            recipe_details[i]['similarity'] = f"{score:.4f}"
 
         # Sort recipes by similarity
         sorted_indices = similarity_scores.argsort()[::-1]
@@ -122,9 +124,26 @@ def home():
 
         similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
 
-        adjectives = ["hearty", "rich", "flavorful", "delicious", "quick", "spicy", "creamy", "crispy", "easy", "healthy"]
-        occasions = ["family gatherings", "weeknight dinners", "special occasions", "holiday meals", "picnics", "dinner parties", "quick lunch", "meal prep"]
-        meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "midnight snack"]
+        adjectives = ["hearty", "rich", "flavorful", "delicious", "quick", "spicy", "creamy", "crispy", 
+                      "easy", "healthy", "tangy", "savory", "zesty", "decadent", "aromatic", "refreshing", 
+                      "wholesome", "chewy", "light", "smoky", "buttery", "indulgent", "velvety"]
+        
+        occasions = ["family gatherings", "weeknight dinners", "special occasions", "holiday meals", 
+                     "picnics", "dinner parties", "quick lunch", "meal prep", "romantic dinners", 
+                     "birthday celebrations", "anniversaries", "lazy weekends", "game nights"]
+        
+        meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "midnight snack", 
+                      "afternoon tea", "weekend brunch", "late-night cravings"]
+        
+        cooking_techniques = ["grilled", "baked", "stir-fried", "steamed", "roasted", 
+                              "sautéed", "smoked", "poached", "seared", "deep-fried"]
+        
+        cuisine_styles = ["Italian", "Chinese", "Mexican", "Indian", "Thai", "French", 
+                          "Japanese", "Korean", "Mediterranean", "Vietnamese", "American", "Caribbean"]
+        
+        ingredients_list = ["chicken", "beef", "pasta", "tofu", "mushrooms", "tomatoes", 
+                            "spinach", "avocado", "cheese", "lemongrass", "ginger", 
+                            "coriander", "coconut milk", "onions", "garlic"]
 
         name_prompts = [
             f"{prompt} soup recipe.",
@@ -135,7 +154,9 @@ def home():
             f"{prompt} with a twist.",
             f"Rich and flavorful {prompt}.",
             f"Homemade {prompt} that delights.",
-            f"{prompt}: A timeless recipe."
+            f"{prompt}: A timeless recipe.",
+            f"A {random.choice(adjectives)} {prompt} for {random.choice(occasions)}.",
+            f"{random.choice(cooking_techniques).capitalize()} {prompt} inspired by {random.choice(cuisine_styles)} cuisine."
         ]
 
         description_prompts = [
@@ -144,25 +165,32 @@ def home():
             f"Try this {prompt} for a perfect {random.choice(meal_times)}. It’s easy to make and delicious.",
             f"Enjoy this {random.choice(adjectives)} {prompt}, a wonderful addition to {random.choice(occasions)}.",
             f"This {prompt} recipe will impress your guests at {random.choice(occasions)} and is ideal for {random.choice(meal_times)}.",
-            f"Packed with flavor and made in no time, {prompt} is perfect for {random.choice(occasions)}."
+            f"Packed with flavor and made in no time, {prompt} is perfect for {random.choice(occasions)}.",
+            f"An {random.choice(adjectives)} {prompt} that’s {random.choice(adjectives)} and great for {random.choice(meal_times)}."
         ]
 
         tags_prompts = [
             f"Relevant tags for '{prompt}' (comma-separated).",
             f"List keywords or tags associated with the dish {prompt}.",
-            f"Suggest tags for {prompt} focusing on dietary and cuisine types."
+            f"Suggest tags for {prompt} focusing on dietary and cuisine types.",
+            f"Tags for {prompt}: cuisine, occasion, and key ingredients.",
+            f"What are the best descriptive tags for {prompt}? Include its {random.choice(cuisine_styles)} origins."
         ]
 
         steps_prompts = [
             f"Step-by-step guide for making '{prompt}' in 10 steps or less.",
-            f"Provide a concise recipe method for {prompt}.",
-            f"Write a simple cooking procedure for the dish {prompt}."
+            f"Step-by-step to guide for a concise recipe method for {prompt}.",
+            f"Step-by-step guide for a simple cooking procedure for the dish {prompt}.",
+            f"Step-by-step guide for the preparation of {prompt} using {random.choice(cooking_techniques)} techniques.",
+            f"Step-by-step guide for how to prepare {prompt} for a {random.choice(meal_times)}."
         ]
 
         ingredients_prompts = [
             f"List the ingredients needed for {prompt}.",
             f"Provide the ingredient list for the dish {prompt}.",
-            f"Suggest ingredients for making {prompt}."
+            f"Suggest ingredients for making {prompt}.",
+            f"What are the essential {random.choice(cuisine_styles)} ingredients for {prompt}?",
+            f"Include {random.choice(ingredients_list)} in the ingredients list for {prompt}."
         ]
 
         # Randomly pick one prompt from each category
@@ -190,7 +218,7 @@ def home():
             'minutes': random.randint(15, 60),  
             'contributor_id': random.randint(1000, 9999), 
             'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  
-            'tags': ', '.join(tags),  # Join tags list into a string
+            'tags': ', '.join(tags),  
             'nutrition': [random.randint(100, 500) for _ in range(7)],  
             'n_steps': len(steps),  
             'steps': steps,  
@@ -211,7 +239,6 @@ def home():
         )
 
     return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None, most_similar_recipe=None)
-
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():

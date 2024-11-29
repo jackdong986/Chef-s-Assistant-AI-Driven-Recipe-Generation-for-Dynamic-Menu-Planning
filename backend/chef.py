@@ -57,12 +57,12 @@ def search_recipe():
     """Search for recipes by name in the dataset."""
     prompt = request.json.get("prompt", "").lower().strip()
 
-    matching_recipes = df[df['name'].str.contains(prompt, na=False, case=False)]
+    # Use regex to match exact words
+    matching_recipes = df[df['name'].str.contains(fr'\b{re.escape(prompt)}\b', na=False, case=False)]
 
     recipes = matching_recipes.head(10)[['name', 'ingredients', 'steps', 'description']].to_dict(orient='records')
 
     return jsonify({"recipes": recipes})
-
 
 @app.route('/random', methods=['GET'])
 def random_recipe():
