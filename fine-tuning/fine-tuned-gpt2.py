@@ -8,7 +8,7 @@ tokenizer.pad_token = tokenizer.eos_token  # Set EOS token as padding
 
 dataset_path = "recipe_generation_dataset.txt"
 dataset = load_dataset('text', data_files={'train': dataset_path})
-dataset['train'] = dataset['train'].shuffle(seed=42).select(range(50000))  # Adjust the range as needed
+dataset['train'] = dataset['train'].shuffle(seed=42).select(range(100000))  # Adjust the range as needed
 
 # Tokenize the dataset with reduced max_length
 def tokenize_function(examples):
@@ -25,7 +25,7 @@ tokenized_dataset = dataset.map(tokenize_function, batched=True, remove_columns=
 # Define the data collator
 data_collator = DataCollatorForLanguageModeling(
     tokenizer=tokenizer,
-    mlm=False  # Causal language modeling (GPT-style)
+    mlm=False 
 )
 
 # Define training arguments with optimized settings
@@ -42,7 +42,6 @@ training_args = TrainingArguments(
     fp16=True  # Enable mixed precision
 )
 
-# Set up Trainer for fine-tuning
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -50,9 +49,7 @@ trainer = Trainer(
     train_dataset=tokenized_dataset['train']
 )
 
-# Fine-tune the model
 trainer.train()
 
-# Save the fine-tuned model and tokenizer
 model.save_pretrained("fine-tuned-gpt2-recipe")
 tokenizer.save_pretrained("fine-tuned-gpt2-recipe")

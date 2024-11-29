@@ -3,20 +3,35 @@ from transformers import pipeline
 from sentence_transformers import SentenceTransformer
 import pandas as pd
 import random
+import re
 
 app = Flask(__name__, template_folder='../ui')
 
-# Fine-tuned models
 pipe = pipeline("text-generation", model="fine-tuned-gpt2-recipe")
 sentence_model = SentenceTransformer("fine-tuned-minilm-similarity")
 
-# Load and preprocess dataset
 dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
 df = pd.read_csv(dataset_path, encoding='ISO-8859-1')
-df['name'] = df['name'].fillna("").astype(str).str.lower()
-df['description'] = df['description'].fillna("").astype(str).str.lower()
-df['steps'] = df['steps'].fillna("").astype(str).str.lower()
-df['ingredients'] = df['ingredients'].fillna("").astype(str).str.lower()
+
+# Cleaning Function
+def clean_text(text):
+    """Remove unwanted characters and ensure uniform formatting."""
+    text = text.replace("[", "").replace("]", "")  
+    text = text.replace('"', "").replace("'", "")  
+    text = text.strip()  
+    return text
+
+df['name'] = df['name'].fillna("").astype(str).str.lower().apply(clean_text)
+df['description'] = df['description'].fillna("").astype(str).str.lower().apply(clean_text)
+df['tags'] = df['tags'].fillna("").astype(str).str.lower().apply(lambda x: [clean_text(tag) for tag in x.strip('[]').split(', ') if tag])
+df['ingredients'] = df['ingredients'].fillna("").astype(str).str.lower().apply(clean_text)
+df['steps'] = df['steps'].fillna("").astype(str).str.lower().apply(clean_text)
+
+df = df[df['steps'].apply(lambda x: len(x.split('.')) <= 20)]
+df = df[df['ingredients'].apply(lambda x: len(x.split(',')) <= 15)]
+
+df['ingredients'] = df['ingredients'].apply(lambda x: ', '.join(x.split(',')))
+df['steps'] = df['steps'].apply(lambda x: '. '.join(x.split('.')))
 
 def find_similar_recipes(prompt, top_n=10):
     """Find top N recipes similar to the prompt."""
@@ -37,31 +52,42 @@ def home():
     """Render the main page with the search and random recipe buttons."""
     return render_template('chefRecipeGenerator.html')
 
-@app.route('/generate', methods=['POST'])
-def generate_recipe():
-    prompt = request.json.get("prompt")
-    # Generate steps for the recipe
-    steps = pipe(prompt, max_length=150, num_return_sequences=1)[0]['generated_text']
-    # Find similar recipes
-    similar_recipes = find_similar_recipes(prompt)
-    return jsonify({"generated_steps": steps, "similar_recipes": similar_recipes})
+@app.route('/search', methods=['POST'])
+def search_recipe():
+    """Search for recipes by name in the dataset."""
+    prompt = request.json.get("prompt", "").lower().strip()
+
+    matching_recipes = df[df['name'].str.contains(prompt, na=False, case=False)]
+
+    recipes = matching_recipes.head(10)[['name', 'ingredients', 'steps', 'description']].to_dict(orient='records')
+
+    return jsonify({"recipes": recipes})
+
 
 @app.route('/random', methods=['GET'])
 def random_recipe():
     """Return 10 random recipes."""
-    random_recipes = df.sample(n=10)
-    recipes = random_recipes[['name', 'ingredients', 'steps']].to_dict(orient='records')
-    return jsonify(recipes)
+    random_recipes = df.sample(n=10)[['name', 'ingredients', 'steps', 'description']].to_dict(orient='records')
+    return jsonify(random_recipes)
 
 @app.route('/recipe_details', methods=['GET'])
 def recipe_details():
-    """Return the details of a specific recipe."""
-    index = int(request.args.get("index"))
-    recipe = df.iloc[index]
+    """Return details of a specific recipe by name."""
+    name = request.args.get("name", "").lower()
+    recipe = df[df['name'] == name].iloc[0]
+    ingredients = recipe['ingredients'].split(', ')
+    steps = recipe['steps'].split('. ')
+    
+    ingredients = [ingredient.strip() for ingredient in ingredients if ingredient.strip()]
+    steps = [step.strip() for step in steps if step.strip()]
+
+    steps = [f"{i+1}. {step}" for i, step in enumerate(steps)]
+
     return jsonify({
         "name": recipe['name'].title(),
-        "ingredients": recipe['ingredients'].split(", "),
-        "steps": recipe['steps'].split(". ")[:10]  # Ensure min 5, max 10 steps
+        "ingredients": ingredients,
+        "steps": steps,
+        "description": recipe['description']
     })
 
 if __name__ == "__main__":
