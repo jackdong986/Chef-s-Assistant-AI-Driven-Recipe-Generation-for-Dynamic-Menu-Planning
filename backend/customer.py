@@ -215,8 +215,37 @@ def home():
 
 @app.route('/generate_random_recipe', methods=['GET'])
 def random_recipe():
-    random_recipes = recipes_df.sample(n=10)
-    random_recipes_list = random_recipes[['name', 'amount', 'description', 'id', 'minutes', 'contributor_id', 'submitted', 'tags', 'nutrition', 'n_steps', 'steps', 'ingredients', 'n_ingredients']].to_dict(orient='records')
+    """Generate random recipes based on category or pick from all if no category is specified."""
+    category = request.args.get('category', '').lower()
+
+    chinese_keywords = [
+    "dumplings", "stir-fry", "peking duck", "dim sum", "hot pot", "sweet and sour", 
+    "noodles", "wonton", "kung pao", "szechuan", "chow mein", "spring rolls", 
+    "sweet and sour pork", "kung pao chicken", "mapo tofu", "char siu", "egg foo young", 
+    "hot and sour soup", "chinese dumplings", "szechuan peppercorns", "beef and broccoli", 
+    "general tso's chicken", "fried rice", "baozi", "shumai", "peking duck", "lobster cantonese style", 
+    "chinese bbq ribs", "wonton soup", "dim sum platter", "gong bao chicken", "shanghai soup dumplings"
+    ]
+
+    western_keywords = [
+    "burger", "steak", "pizza", "sandwich", "pasta", "barbecue", "roast", "salad", "cheesecake", 
+    "french fries", "chicken wings", "fried chicken", "bbq ribs", "grilled cheese", "fish and chips", 
+    "buffalo wings", "spaghetti", "lasagna", "beef wellington", "peking duck", "cobb salad", "roast chicken", 
+    "chicken alfredo", "tacos", "pastrami sandwich", "caesar salad", "pork chops", "meatloaf", "cheeseburger", 
+    "pulled pork", "clam chowder", "bangers and mash", "bacon and eggs", "steak frites", "currywurst", "goulash", 
+    "sloppy joes", "quiche", "apple pie", "chicken parmesan", "moussaka", "cornbread"
+    ]
+
+    if category == "chinese":
+        filtered_recipes = recipes_df[recipes_df['name'].str.contains('|'.join(chinese_keywords), case=False, na=False)]
+    elif category == "western":
+        filtered_recipes = recipes_df[recipes_df['name'].str.contains('|'.join(western_keywords), case=False, na=False)]
+    else:
+        filtered_recipes = recipes_df
+
+    random_recipes = filtered_recipes.sample(n=min(10, len(filtered_recipes)))
+    random_recipes_list = random_recipes[['name', 'amount', 'description']].to_dict(orient='records')
+
     return jsonify(random_recipes_list)
 
 if __name__ == "__main__":

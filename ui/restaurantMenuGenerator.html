@@ -288,30 +288,36 @@
         <!-- Random Recipes Section -->
         <div id="random-recipes" class="container content-section" style="display:none;">
             <h2>Generate Random Recipe:</h2>
+            <!-- Buttons for selecting category -->
             <button class="button-random" onclick="fetchRandomRecipes()">Get Random Recipes</button>
+            <button class="button-random" onclick="fetchRandomRecipes('chinese')">Get Chinese Recipes</button>
+            <button class="button-random" onclick="fetchRandomRecipes('western')">Get Western Recipes</button>
+
+            <!-- Container to display fetched recipes -->
             <div id="random-recipes-list" class="random-recipe"></div>
         </div>
+
     </div>
 
     <script>
         function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const menuToggle = document.getElementById('menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.getElementById('menu-toggle');
 
-    // Toggle sidebar open or closed
-    sidebar.classList.toggle('open');
+            // Toggle sidebar open or closed
+            sidebar.classList.toggle('open');
 
-    // Scroll to the top when opening the sidebar
-    if (sidebar.classList.contains('open')) {
-        window.scrollTo({
-            top: 0,       
-            behavior: 'smooth' 
-        });
-        menuToggle.style.display = 'none';
-    } else {
-        menuToggle.style.display = 'block'; 
-    }
-}
+            // Scroll to the top when opening the sidebar
+            if (sidebar.classList.contains('open')) {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                menuToggle.style.display = 'none';
+            } else {
+                menuToggle.style.display = 'block';
+            }
+        }
 
         function showContent(section) {
             document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
@@ -322,20 +328,37 @@
             document.querySelector(`.sidebar a[onclick="showContent('${section}')"]`).classList.add('active');
         }
 
-        function fetchRandomRecipes() {
-            fetch('/generate_random_recipe')
+        function fetchRandomRecipes(category = '') {
+            const url = category
+                ? `/generate_random_recipe?category=${category}`
+                : '/generate_random_recipe';
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    const recipesHtml = data.map(recipe => `
+                    const recipesContainer = document.getElementById('random-recipes-list');
+
+                    // Check if any recipes were returned
+                    if (data.length === 0) {
+                        recipesContainer.innerHTML = '<p>No recipes found for this category.</p>';
+                    } else {
+                        // Render the recipes
+                        const recipesHtml = data
+                            .map(recipe => `
                         <div class="menu-item">
                             <h3>${recipe.name}</h3>
                             <p><strong>Item Price: RM</strong> ${recipe.amount}</p>
                             <p><strong>Description:</strong> ${recipe.description}</p>
                         </div>
-                    `).join('');
-                    document.getElementById('random-recipes-list').innerHTML = recipesHtml;
+                    `)
+                            .join('');
+                        recipesContainer.innerHTML = recipesHtml;
+                    }
                 })
-                .catch(error => console.error('Error fetching random recipes:', error));
+                .catch(error => {
+                    console.error('Error fetching random recipes:', error);
+                    alert('An error occurred while fetching recipes.');
+                });
         }
 
         window.onload = () => showContent('exist');
