@@ -30,9 +30,11 @@ else:
     ])
 
 def clean_text(text):
-    """Remove content inside parentheses and trim the result."""
-    return re.sub(r"\s*\(.*?\)", "", text).strip()
-
+    """Remove unwanted characters and ensure uniform formatting."""
+    text = re.sub(r"\s*\(.*?\)", "", text)  # Remove text inside parentheses
+    text = re.sub(r"[^\w\s\-:,.]+", "", text).strip()  # Remove invalid characters
+    text = text.replace("  ", " ")  # Replace double spaces
+    return text
 
 def encode_text(text):
     """Encode text using AutoTokenizer and AutoModel, returning a normalized embedding."""
@@ -146,18 +148,14 @@ def home():
                             "coriander", "coconut milk", "onions", "garlic"]
 
         name_prompts = [
-            f"{prompt} soup recipe.",
-            f"The ultimate {prompt} side dish.",
-            f"{prompt}, a hearty classic.",
-            f"Easy and delicious {prompt} soup.",
-            f"Quick and tasty {prompt}.",
-            f"{prompt} with a twist.",
-            f"Rich and flavorful {prompt}.",
-            f"Homemade {prompt} that delights.",
-            f"{prompt}: A timeless recipe.",
-            f"A {random.choice(adjectives)} {prompt} for {random.choice(occasions)}.",
-            f"{random.choice(cooking_techniques).capitalize()} {prompt} inspired by {random.choice(cuisine_styles)} cuisine."
+            f"The ultimate {random.choice(adjectives)} {prompt} side dish.",
+            f"{random.choice(cooking_techniques).capitalize()} {prompt} with {random.choice(ingredients_list)}.",
+            f"{random.choice(adjectives).capitalize()} {prompt} for {random.choice(occasions)}.",
+            f"{random.choice(cuisine_styles)}-style {prompt} recipe.",
+            f"A {random.choice(adjectives)} {prompt} that delights."
         ]
+
+
 
         description_prompts = [
             f"This {prompt} recipe is a {random.choice(adjectives)} dish that’s perfect for {random.choice(occasions)}.",
@@ -206,7 +204,11 @@ def home():
         steps = pipe(selected_steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
         ingredients = pipe(selected_ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
-        name = clean_text(name)
+        cleaned_name = re.sub(r"[\d]+(\.\d+)?\s*(sec|oz|g|ml|per|for|each|serving|minute|hour|day)s?", "", name, flags=re.IGNORECASE)
+        cleaned_name = re.sub(r"[^\w\s\-:,.]+", "", cleaned_name).strip()  # Remove special characters
+
+        # Final clean text
+        name = clean_text(cleaned_name)
         description = clean_text(description)
         tags = [clean_text(tag) for tag in tags if tag.strip()]  
         steps = [clean_text(step) for step in steps if step.strip()] 
