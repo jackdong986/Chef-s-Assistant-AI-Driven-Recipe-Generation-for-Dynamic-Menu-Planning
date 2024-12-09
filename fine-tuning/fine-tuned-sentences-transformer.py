@@ -7,7 +7,7 @@ model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 similarity_df = pd.read_csv("recipe_similarity_pairs.csv")
 
 # Sample a subset of the data for quicker training
-sample_size = min(40000, len(similarity_df))  # Adjust sample size as needed
+sample_size = min(50000, len(similarity_df))  # Adjust sample size as needed
 sampled_df = similarity_df.sample(sample_size, random_state=42)
 
 train_examples = [
