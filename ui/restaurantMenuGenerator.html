@@ -4,108 +4,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurant Menu Generator</title>
+    <title>Chef Recipe Generator</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f8f9fa;
+        /* Reset and Global Styles */
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+    
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
             display: flex;
             flex-direction: row;
+            color: #333;
         }
-
+    
+        /* Sidebar Styling */
         .sidebar {
             width: 220px;
             background-color: #00509E;
             color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding-top: 20px;
+            height: 100vh;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
             position: fixed;
-            top: 0;
             left: 0;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            height: 100%;
-            z-index: 10;
         }
-
+    
         .sidebar a {
-            color: white;
             text-decoration: none;
-            padding: 15px;
-            display: block;
+            color: white;
             font-size: 18px;
-            border-bottom: 1px solid #003d7e;
-            transition: background 0.3s ease;
+            padding: 15px 20px;
+            width: 90%;
+            text-align: center;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            transition: background 0.3s ease, color 0.3s ease;
         }
-
-        .sidebar a:hover {
-            background-color: #003d7e;
-        }
-
+    
         .sidebar a.active {
             background-color: #FFD500;
             color: #003d7e;
             font-weight: bold;
         }
-
+    
+        .sidebar a:hover {
+            background-color: #003d7e;
+        }
+    
+        /* Content Area */
         .content {
             margin-left: 240px;
-            padding: 20px;
-            width: 100%;
+            padding: 40px;
+            width: calc(100% - 240px);
+            background-color: #f8f9fa;
+            min-height: 100vh;
         }
-
+    
+        h1 {
+            font-size: 2.5em;
+            color: #00509E;
+            margin-bottom: 20px;
+        }
+    
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #003d7e;
+        }
+    
         .section {
             display: none;
         }
-
+    
         .section.active {
             display: block;
         }
-
-        h1 {
-            color: #333;
-        }
-
-        input,
-        button {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        button {
-            background-color: #007bff;
-            color: white;
+    
+        .menu-item {
+            background-color: #ffffff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer;
         }
-
-        button:hover {
-            background-color: #0056b3;
+    
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
         }
-
-        .recipe-list {
-            margin-top: 20px;
+    
+        ul, ol {
+            padding-left: 20px;
+            margin-top: 10px;
         }
-
-        .menu-item {
-            background-color: #f0f0f0;
-            margin: 10px;
-            padding: 15px;
+    
+        ul li, ol li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+    
+        /* Buttons and Inputs */
+        button, input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: none;
             border-radius: 5px;
+            font-size: 16px;
         }
-
+    
+        button {
+            background-color: #FFD500;
+            color: #003d7e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+    
+        button:hover {
+            background-color: #e5be00;
+        }
+    
+        input[type="text"] {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            color: #555;
+            font-size: 16px;
+        }
+    
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #00509E;
+            box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);
+        }
+    
+        /* Loading Spinner */
         .loading {
             display: none;
             text-align: center;
             margin-top: 20px;
         }
-
+    
         .loading img {
-            width: 50px;
+            width: 60px;
+        }
+    
+        /* Recipe Details Section */
+        #recipeDetails {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+    
+        #recipeName {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #003d7e;
+        }
+    
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 180px;
+            }
+    
+            .content {
+                margin-left: 200px;
+                padding: 20px;
+            }
+    
+            h1 {
+                font-size: 2em;
+            }
+    
+            h2 {
+                font-size: 1.5em;
+            }
         }
     </style>
+    
 </head>
 
 <body>
@@ -118,7 +205,7 @@
 
     <!-- Main Content -->
     <div class="content">
-        <h1>Restaurant Menu Generator</h1>
+        <h1>Chef Recipe Generator</h1>
 
         <!-- Search Section -->
         <div id="searchSection" class="section active">
@@ -143,6 +230,15 @@
             <div id="newRecipeDetails" class="recipe-list"></div>
         </div>
 
+        <!-- Recipe Details Section -->
+        <div id="recipeDetails" class="section">
+            <h2 id="recipeName">Recipe Name</h2>
+            <h3>Ingredients:</h3>
+            <ul id="recipeIngredientsList"></ul>
+            <h3>Steps:</h3>
+            <ol id="recipeStepsList"></ol>
+        </div>
+
         <!-- Loading Spinner -->
         <div id="loading" class="loading">
             <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..."> <!-- Example loading spinner -->
@@ -151,123 +247,147 @@
     </div>
 
     <script>
-        let isFetching = false; // Prevent multiple simultaneous fetches
-
-        // Function to toggle the active section
         function showSection(sectionId) {
-            // Hide all sections
-            const sections = document.querySelectorAll('.section');
-            sections.forEach(section => {
+            document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
             });
+            document.getElementById(sectionId).classList.add('active');
 
-            // Show the selected section
-            const selectedSection = document.getElementById(sectionId);
-            selectedSection.classList.add('active');
-
-            // Highlight the active link in sidebar
-            const links = document.querySelectorAll('.sidebar a');
-            links.forEach(link => {
+            document.querySelectorAll('.sidebar a').forEach(link => {
                 link.classList.remove('active');
             });
             document.querySelector(`.sidebar a[onclick="showSection('${sectionId}')"]`).classList.add('active');
         }
 
-        // Show loading indicator
         function showLoading() {
             document.getElementById('loading').style.display = 'block';
         }
 
-        // Hide loading indicator
         function hideLoading() {
             document.getElementById('loading').style.display = 'none';
         }
 
-        // Function to search for recipes
         function searchRecipe() {
-            if (isFetching) return; // Prevent triggering multiple fetches
-            isFetching = true;
+        const searchInput = document.getElementById('searchBar').value.trim();
+        if (!searchInput) {
+            alert("Please enter a recipe name to search.");
+            return;
+        }
+        showLoading();
+        fetch('/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: searchInput })
+        })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (!data.recipes.length) {
+                    alert("No recipes found.");
+                    return;
+                }
+                displayRecipes(data.recipes, 'searchResults');
+            })
+            .catch(error => {
+                hideLoading();
+                alert("Error searching recipes.");
+                console.error(error);
+            });
+    }
 
-            const searchInput = document.getElementById('searchBar').value.trim();
-            if (!searchInput) {
-                alert("Please enter a recipe name to search.");
-                isFetching = false;
+    function fetchRandomRecipes() {
+        showLoading();
+        fetch('/random')
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (!data.length) {
+                    alert("No recipes found.");
+                    return;
+                }
+                displayRecipes(data, 'randomRecipes');
+            })
+            .catch(error => {
+                hideLoading();
+                alert("Error fetching random recipes.");
+                console.error(error);
+            });
+    }
+
+        function displayRecipes(recipes, sectionId) {
+        const container = document.getElementById(sectionId);
+        container.innerHTML = recipes.map(recipe => `
+            <div class="menu-item" onclick="viewRecipeDetails('${recipe.name}')">
+                <h3>${recipe.name}</h3>
+                ${recipe.similarity ? `<p>Similarity: ${recipe.similarity}</p>` : ''}
+            </div>
+        `).join('');
+    }
+
+    function viewRecipeDetails(recipeName) {
+    showLoading();
+    fetch(`/recipe_details?name=${encodeURIComponent(recipeName)}`)
+        .then(response => {
+            console.log("Response Status:", response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Fetched Data:", data); // Log the data for debugging
+            hideLoading();
+
+            if (data.error) {
+                alert("Error: " + data.error);
                 return;
             }
 
-            showLoading(); // Show loading spinner while fetching data
+            // Populate the recipe details section
+            document.getElementById('recipeName').textContent = data.name;
+            document.getElementById('recipeIngredientsList').innerHTML = data.ingredients.map(
+                ingredient => `<li>${ingredient}</li>`
+            ).join('');
+            document.getElementById('recipeStepsList').innerHTML = data.steps.map(
+                step => `<li>${step}</li>`
+            ).join('');
+            showSection('recipeDetails');
+        })
+        .catch(error => {
+            hideLoading();
+            console.error("Error fetching recipe details:", error); // Log error for debugging
+            alert("An error occurred while fetching the recipe details. Please try again.");
+        });
+}
 
-            fetch('/search', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: searchInput })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const searchResults = document.getElementById('searchResults');
-                searchResults.innerHTML = data.recipes.map(recipe => `
-                    <div class="menu-item">
-                        <h3>${recipe.name}</h3>
-                        <p><strong>Similarity:</strong> ${recipe.similarity}</p>
-                    </div>
-                `).join('');
-                hideLoading(); // Hide loading spinner after data is fetched
-                isFetching = false;
-            })
-            .catch(error => {
-                console.error("Error fetching search results:", error);
-                hideLoading();
-                isFetching = false;
-            });
-        }
-
-        // Function to fetch random recipes
-        function fetchRandomRecipes() {
-            fetch('/random')
-            .then(response => response.json())
-            .then(data => {
-                const randomRecipes = document.getElementById('randomRecipes');
-                randomRecipes.innerHTML = data.map(recipe => `
-                    <div class="menu-item">
-                        <h3>${recipe.name}</h3>
-                        <p><strong>Ingredients:</strong> ${recipe.ingredients}</p>
-                    </div>
-                `).join('');
-            });
-        }
-
-        // Function to create a new recipe
         function createRecipe() {
             const newRecipeName = document.getElementById('newRecipeName').value.trim();
             if (!newRecipeName) {
                 alert("Please enter a recipe name to create.");
                 return;
             }
-
+            showLoading();
             fetch('/create_recipe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name: newRecipeName })
             })
-            .then(response => response.json())
-            .then(data => {
-                const newRecipeDetails = document.getElementById('newRecipeDetails');
-                newRecipeDetails.innerHTML = `
-                    <div class="menu-item">
-                        <h3>${data.name}</h3>
-                        <p><strong>Ingredients:</strong> ${data.ingredients}</p>
-                        <p><strong>Description:</strong> ${data.description}</p>
-                    </div>
-                `;
-            });
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    document.getElementById('newRecipeDetails').innerHTML = `
+                        <div class="menu-item">
+                            <h3>${data.name}</h3>
+                            <p>Recipe created successfully!</p>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert("Error creating recipe.");
+                });
         }
 
-        // Function to format and display ingredients
-        function formatIngredients(ingredients) {
-            return ingredients.join(', '); // Join ingredients into a comma-separated string
-        }
-
-        // Show the initial section (Search Recipes)QA
         showSection('searchSection');
     </script>
 </body>

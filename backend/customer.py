@@ -77,14 +77,25 @@ def random_recipe():
 @app.route('/recipe_details', methods=['GET'])
 def recipe_details():
     """Return details of a specific recipe."""
-    name = request.args.get("name", "").lower()
-    recipe = recipes_df[recipes_df['name'] == name].iloc[0]
-    ingredients = recipe['ingredients'].split(', ')
-    steps = recipe['steps'].split('. ')
+    name = request.args.get("name", "").lower().strip()
+    matching_recipes = recipes_df[recipes_df['name'].str.lower() == name]
+
+    if matching_recipes.empty:
+        return jsonify({"error": "Recipe not found"}), 404
+
+    recipe = matching_recipes.iloc[0]
+
+    ingredients = recipe['ingredients']
+    steps = recipe['steps']
+
+    # Ensure ingredients and steps are correctly parsed
+    ingredients = ingredients.strip('[]').split(', ') if pd.notna(ingredients) else []
+    steps = steps.strip('[]').split('. ') if pd.notna(steps) else []
+
     return jsonify({
         "name": recipe['name'].title(),
-        "ingredients": ingredients,
-        "steps": steps
+        "ingredients": [ingredient.strip().strip('"').strip("'") for ingredient in ingredients if ingredient.strip()],
+        "steps": [step.strip().strip('"').strip("'") for step in steps if step.strip()]
     })
 
 @app.route('/create_recipe', methods=['POST'])
