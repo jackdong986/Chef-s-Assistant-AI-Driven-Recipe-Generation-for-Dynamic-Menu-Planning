@@ -1,368 +1,274 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Restaurant Menu Generator</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #E6F7FF;
+            background-color: #f8f9fa;
             margin: 0;
             padding: 0;
             display: flex;
-            transition: all 0.3s ease;
-            height: 100%;
+            flex-direction: row;
         }
 
-        /* Sidebar Styles */
         .sidebar {
             width: 220px;
             background-color: #00509E;
             color: white;
-            height: 200%;
-            display: flex;
-            flex-direction: column;
             padding-top: 20px;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-            transform: translateX(-220px);
-            transition: transform 0.3s ease;
-        }
-
-        .sidebar.open {
-            transform: translateX(0);
-        }
-
-        .sidebar.closed {
-            transform: translateX(-220px);
-        }
-
-        /* Close Button Style */
-        .sidebar .close-button {
-            text-align: center;
-            font-weight: bold;
-            border-top: 1px solid #003d7e;
-            padding: 15px 20px;
-            cursor: pointer;
+            height: 100%;
+            z-index: 10;
         }
 
         .sidebar a {
             color: white;
             text-decoration: none;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            font-size: 16px;
+            padding: 15px;
+            display: block;
+            font-size: 18px;
             border-bottom: 1px solid #003d7e;
-            transition: background 0.3s ease, padding-left 0.3s ease;
+            transition: background 0.3s ease;
         }
 
         .sidebar a:hover {
             background-color: #003d7e;
-            padding-left: 30px;
         }
 
         .sidebar a.active {
             background-color: #FFD500;
-            color: #00509E;
+            color: #003d7e;
             font-weight: bold;
         }
 
-        .sidebar .sidebar-icon {
-            font-size: 20px;
-            margin-right: 10px;
-        }
-
-        /* Content Area */
         .content {
-            flex: 1;
+            margin-left: 240px;
             padding: 20px;
             width: 100%;
-            transition: padding 0.3s ease;
-            box-sizing: border-box;
         }
 
-        /* Container Styling */
-        .container {
-            background: white;
-            padding: 30px;
-            margin: 20px auto;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            border: 1px solid #ddd;
-            width: 80%;
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
         }
 
         h1 {
-            text-align: center;
-            color: #00509E;
+            color: #333;
         }
 
-        form {
-            display: flex;
-            flex-direction: column;
-        }
-
-        label {
-            margin: 10px 0 5px;
-            color: #00509E;
-        }
-
-        input[type="text"] {
+        input,
+        button {
+            width: 100%;
             padding: 10px;
+            margin: 5px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
-            margin-bottom: 20px;
         }
 
-        input::placeholder {
-            color: #aaa;
-            font-style: italic;
-        }
-
-        input[type="submit"] {
-            background: #FFD500;
-            color: #00509E;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
+        button {
+            background-color: #007bff;
+            color: white;
             cursor: pointer;
-            font-size: 16px;
         }
 
-        input[type="submit"]:hover {
-            background: #FFC300;
+        button:hover {
+            background-color: #0056b3;
         }
 
-        h2 {
-            color: #00509E;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        /* Menu Item Styling */
-        .menu-item,
-        .random-recipe {
-            background: #F2F2F2;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-
-        .button-random {
-            background: #00509E;
-            color: #fff;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
-
-            /* Center the button */
-            display: block;
-            margin: 20px auto;
-            /* Horizontally center */
-            text-align: center;
-        }
-
-        .button-random:hover {
-            background: #003d7e;
-            transform: translateY(-2px);
-        }
-
-
-        /* Button for Sidebar Toggle */
-        .button-sidebar {
-            background: #00509E;
-            color: #fff;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 18px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            top: 0%;
-            left: 2px;
-            z-index: 1100;
-        }
-
-        .button-sidebar:hover {
-            background: #003d7e;
-            transform: translateY(-2px);
-        }
-
-        /* Random Recipe Styling */
-        #random-recipes {
+        .recipe-list {
             margin-top: 20px;
+        }
+
+        .menu-item {
+            background-color: #f0f0f0;
+            margin: 10px;
             padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            background-color: #F9F9F9;
-            transition: background-color 0.3s ease;
-        }
-
-        #random-recipes:hover {
-            background-color: #F1F1F1;
-        }
-
-        .random-recipe .menu-item {
-            background: #E8F5E9;
-            border-left: 5px solid #4CAF50;
-            padding: 10px;
             border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading img {
+            width: 50px;
         }
     </style>
 </head>
 
 <body>
-    <div class="sidebar" id="sidebar">
-        <a href="javascript:void(0);" onclick="showContent('exist')" class="active">
-            <span class="sidebar-icon">📄</span>
-            <span>Exist Recipes</span>
-        </a>
-        <a href="javascript:void(0);" onclick="showContent('newly')">
-            <span class="sidebar-icon">✨</span>
-            <span>Newly Recipes</span>
-        </a>
-        <a href="javascript:void(0);" onclick="showContent('random')">
-            <span class="sidebar-icon">🎲</span>
-            <span>Random Recipes</span>
-        </a>
-        <a href="javascript:void(0);" onclick="toggleSidebar()" class="close-button">
-            <span class="sidebar-icon">❌</span>
-            <span>Close Menu</span>
-        </a>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="javascript:void(0);" onclick="showSection('searchSection')" class="active">Search Recipes</a>
+        <a href="javascript:void(0);" onclick="showSection('randomSection')">Random Recipes</a>
+        <a href="javascript:void(0);" onclick="showSection('createSection')">Create New Recipe</a>
     </div>
 
-    <!-- Content Area -->
-    <div class="content" id="content">
-        <h1>Restaurant Food Item with Its Price and Description</h1>
-        <button class="button-sidebar" id="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <div class="container" id="input-form">
-            <form method="post" action="/">
-                <label for="prompt">Enter your food:</label>
-                <input type="text" id="prompt" name="prompt" placeholder="E.g., Spaghetti Bolognese" required>
-                <label for="dietary_restrictions">Dietary Restrictions (Exclude):</label>
-                <input type="text" id="dietary_restrictions" name="dietary_restrictions"
-                    placeholder="E.g., No peanuts, no dairy">
-                <label for="eating_habits">Eating Habits (Include):</label>
-                <input type="text" id="eating_habits" name="eating_habits" placeholder="E.g., Vegetarian, Low-carb">
-                <label for="budget">Budget (RM):</label>
-                <input type="text" id="budget" name="budget" placeholder="E.g., 20" required>
-                <input type="submit" value="Generate Menu">
-            </form>
-        </div>
+    <!-- Main Content -->
+    <div class="content">
+        <h1>Restaurant Menu Generator</h1>
 
-        <div id="exist-recipes" class="container content-section">
-            {% if recipes %}
-            <h2>Exist Recipe:</h2>
-            <div id="menu-container">
-                {% for recipe in recipes %}
-                <div class="menu-item">
-                    <h3>{{ recipe.name }}</h3>
-                    <p><strong>Item Price: RM</strong> {{ recipe.amount }}</p>
-                    <p><strong>Description:</strong> {{ recipe.description }}</p>
-                    <p><strong>Similarity:</strong> {{ recipe.similarity }}</p>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-
-        <div id="newly-recipes" class="container content-section" style="display:none;">
-            {% if new_recipe %}
-            <h2>Newly Recipe:</h2>
-            <div class="menu-item">
-                <h3>{{ new_recipe.name }}</h3>
-                <p><strong>Item Price: RM</strong> {{ new_recipe.amount }}</p>
-                <p><strong>Description:</strong> {{ new_recipe.description }}</p>
-            </div>
-            {% endif %}
+        <!-- Search Section -->
+        <div id="searchSection" class="section active">
+            <h2>Search Recipes</h2>
+            <input type="text" id="searchBar" placeholder="Search for a recipe...">
+            <button onclick="searchRecipe()">Search</button>
+            <div id="searchResults" class="recipe-list"></div>
         </div>
 
         <!-- Random Recipes Section -->
-        <div id="random-recipes" class="container content-section" style="display:none;">
-            <h2>Generate Random Recipe:</h2>
-            <!-- Buttons for selecting category -->
-            <button class="button-random" onclick="fetchRandomRecipes()">Get Random Recipes</button>
-            <button class="button-random" onclick="fetchRandomRecipes('chinese')">Get Chinese Recipes</button>
-            <button class="button-random" onclick="fetchRandomRecipes('western')">Get Western Recipes</button>
-
-            <!-- Container to display fetched recipes -->
-            <div id="random-recipes-list" class="random-recipe"></div>
+        <div id="randomSection" class="section">
+            <h2>Generate Random Recipes</h2>
+            <button onclick="fetchRandomRecipes()">Generate Random Recipes</button>
+            <div id="randomRecipes" class="recipe-list"></div>
         </div>
 
+        <!-- Create New Recipe Section -->
+        <div id="createSection" class="section">
+            <h2>Create a New Recipe</h2>
+            <input type="text" id="newRecipeName" placeholder="Recipe Name">
+            <button onclick="createRecipe()">Create Recipe</button>
+            <div id="newRecipeDetails" class="recipe-list"></div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading">
+            <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..."> <!-- Example loading spinner -->
+            <p>Processing...</p>
+        </div>
     </div>
 
     <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const menuToggle = document.getElementById('menu-toggle');
+        let isFetching = false; // Prevent multiple simultaneous fetches
 
-            // Toggle sidebar open or closed
-            sidebar.classList.toggle('open');
+        // Function to toggle the active section
+        function showSection(sectionId) {
+            // Hide all sections
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
 
-            // Scroll to the top when opening the sidebar
-            if (sidebar.classList.contains('open')) {
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-                menuToggle.style.display = 'none';
-            } else {
-                menuToggle.style.display = 'block';
+            // Show the selected section
+            const selectedSection = document.getElementById(sectionId);
+            selectedSection.classList.add('active');
+
+            // Highlight the active link in sidebar
+            const links = document.querySelectorAll('.sidebar a');
+            links.forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`.sidebar a[onclick="showSection('${sectionId}')"]`).classList.add('active');
+        }
+
+        // Show loading indicator
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Function to search for recipes
+        function searchRecipe() {
+            if (isFetching) return; // Prevent triggering multiple fetches
+            isFetching = true;
+
+            const searchInput = document.getElementById('searchBar').value.trim();
+            if (!searchInput) {
+                alert("Please enter a recipe name to search.");
+                isFetching = false;
+                return;
             }
+
+            showLoading(); // Show loading spinner while fetching data
+
+            fetch('/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: searchInput })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const searchResults = document.getElementById('searchResults');
+                searchResults.innerHTML = data.recipes.map(recipe => `
+                    <div class="menu-item">
+                        <h3>${recipe.name}</h3>
+                        <p><strong>Similarity:</strong> ${recipe.similarity}</p>
+                    </div>
+                `).join('');
+                hideLoading(); // Hide loading spinner after data is fetched
+                isFetching = false;
+            })
+            .catch(error => {
+                console.error("Error fetching search results:", error);
+                hideLoading();
+                isFetching = false;
+            });
         }
 
-        function showContent(section) {
-            document.querySelectorAll('.content-section').forEach(el => el.style.display = 'none');
-            document.getElementById('input-form').style.display = section === 'random' ? 'none' : 'block';
-            document.getElementById(`${section}-recipes`).style.display = 'block';
-
-            document.querySelectorAll('.sidebar a').forEach(el => el.classList.remove('active'));
-            document.querySelector(`.sidebar a[onclick="showContent('${section}')"]`).classList.add('active');
+        // Function to fetch random recipes
+        function fetchRandomRecipes() {
+            fetch('/random')
+            .then(response => response.json())
+            .then(data => {
+                const randomRecipes = document.getElementById('randomRecipes');
+                randomRecipes.innerHTML = data.map(recipe => `
+                    <div class="menu-item">
+                        <h3>${recipe.name}</h3>
+                        <p><strong>Ingredients:</strong> ${recipe.ingredients}</p>
+                    </div>
+                `).join('');
+            });
         }
 
-        function fetchRandomRecipes(category = '') {
-            const url = category
-                ? `/generate_random_recipe?category=${category}`
-                : '/generate_random_recipe';
+        // Function to create a new recipe
+        function createRecipe() {
+            const newRecipeName = document.getElementById('newRecipeName').value.trim();
+            if (!newRecipeName) {
+                alert("Please enter a recipe name to create.");
+                return;
+            }
 
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    const recipesContainer = document.getElementById('random-recipes-list');
-
-                    // Check if any recipes were returned
-                    if (data.length === 0) {
-                        recipesContainer.innerHTML = '<p>No recipes found for this category.</p>';
-                    } else {
-                        // Render the recipes
-                        const recipesHtml = data
-                            .map(recipe => `
-                        <div class="menu-item">
-                            <h3>${recipe.name}</h3>
-                            <p><strong>Item Price: RM</strong> ${recipe.amount}</p>
-                            <p><strong>Description:</strong> ${recipe.description}</p>
-                        </div>
-                    `)
-                            .join('');
-                        recipesContainer.innerHTML = recipesHtml;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching random recipes:', error);
-                    alert('An error occurred while fetching recipes.');
-                });
+            fetch('/create_recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newRecipeName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const newRecipeDetails = document.getElementById('newRecipeDetails');
+                newRecipeDetails.innerHTML = `
+                    <div class="menu-item">
+                        <h3>${data.name}</h3>
+                        <p><strong>Ingredients:</strong> ${data.ingredients}</p>
+                        <p><strong>Description:</strong> ${data.description}</p>
+                    </div>
+                `;
+            });
         }
 
-        window.onload = () => showContent('exist');
+        // Function to format and display ingredients
+        function formatIngredients(ingredients) {
+            return ingredients.join(', '); // Join ingredients into a comma-separated string
+        }
+
+        // Show the initial section (Search Recipes)QA
+        showSection('searchSection');
     </script>
 </body>
 

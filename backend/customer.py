@@ -1,281 +1,131 @@
 from flask import Flask, render_template, request, jsonify
-import random
-import torch
-from transformers import AutoTokenizer, AutoModel, pipeline
 import pandas as pd
-import os
-from sklearn.metrics.pairwise import cosine_similarity
+import random
 import re
+import os
+from transformers import pipeline
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
+# Flask setup
 app = Flask(__name__, template_folder='../ui')
 
-#pipe = pipeline("text-generation", model="openai-community/gpt2-large")
+# Load models
 pipe = pipeline("text-generation", model="fine-tuned-gpt2-recipe")
+sentence_model = SentenceTransformer('fine-tuned-minilm-similarity')
 
-#tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-#model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
-tokenizer = AutoTokenizer.from_pretrained("fine-tuned-minilm-similarity")
-model = AutoModel.from_pretrained("fine-tuned-minilm-similarity")
-
-
+# Load dataset
 dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
-
 if os.path.exists(dataset_path):
-    recipes_df = pd.read_csv(dataset_path, encoding='ISO-8859-1')
+    recipes_df = pd.read_csv(dataset_path, encoding='ISO-8859-1', low_memory=False)
 else:
     recipes_df = pd.DataFrame(columns=[
-        'name', 'id', 'minutes', 'contributor_id', 'submitted', 'tags', 
-        'nutrition', 'n_steps', 'steps', 'description', 'ingredients', 
+        'name', 'id', 'minutes', 'contributor_id', 'submitted', 'tags',
+        'nutrition', 'n_steps', 'steps', 'description', 'ingredients',
         'n_ingredients', 'amount'
     ])
 
+# Utility function to clean text
 def clean_text(text):
     """Remove unwanted characters and ensure uniform formatting."""
     text = re.sub(r"\s*\(.*?\)", "", text)  # Remove text inside parentheses
     text = re.sub(r"[^\w\s\-:,.]+", "", text).strip()  # Remove invalid characters
-    text = text.replace("  ", " ")  # Replace double spaces
     return text
 
-def encode_text(text):
-    """Encode text using AutoTokenizer and AutoModel, returning a normalized embedding."""
-    inputs = tokenizer(text, return_tensors='pt', truncation=True, padding=True)
-    with torch.no_grad():
-        embeddings = model(**inputs).last_hidden_state[:, 0, :]
-    return torch.nn.functional.normalize(embeddings, p=2, dim=1)  
-
-def find_similar_recipes(prompt, dietary_restrictions='', eating_habits='', budget=''):
-    prompt_embedding = encode_text(prompt)
-
-    recipe_embeddings = []
-    recipe_details = []
-
-    for _, recipe in recipes_df.iterrows():
-        tags = recipe['tags']
-        
-        if isinstance(tags, float) and pd.isna(tags):  # Skip NaN tags
-            continue
-        elif isinstance(tags, str):
-            try:
-                tags = eval(tags)  
-                if not isinstance(tags, list):
-                    continue  
-            except:
-                continue  
-        elif not isinstance(tags, list): 
-            continue
-
-        tags = [str(tag).lower() for tag in tags]  
-
-        # Filter based on dietary restrictions
-        if dietary_restrictions:
-            restrictions = [r.strip().lower() for r in dietary_restrictions.split(',')]
-            if not all(restriction in tags for restriction in restrictions):
-                continue
-
-        # Filter based on eating habits
-        if eating_habits:
-            habits = [h.strip().lower() for h in eating_habits.split(',')]
-            if not any(habit in tags for habit in habits):
-                continue
-
-        # Filter based on budget
-        if budget:
-            try:
-                recipe_amount = float(recipe['amount'])  
-                budget = float(budget)
-                if not (budget - 20 <= recipe_amount <= budget + 20):
-                    continue
-            except ValueError:
-                continue  
-
-        # Encode recipe name and add to embeddings list
-        recipe_embedding = encode_text(recipe['name'])
-        recipe_embeddings.append(recipe_embedding)
-        recipe_details.append({
-            'name': recipe['name'],
-            'amount': recipe['amount'],
-            'description': recipe['description']
-        })
-
-    # Calculate cosine similarities
-    if recipe_embeddings:
-        recipe_embeddings = torch.cat(recipe_embeddings, dim=0)
-        similarities = cosine_similarity(prompt_embedding.cpu().numpy(), recipe_embeddings.cpu().numpy())
-        similarity_scores = similarities[0]
-        for i, score in enumerate(similarity_scores):
-            recipe_details[i]['similarity'] = f"{score:.4f}"
-
-        # Sort recipes by similarity
-        sorted_indices = similarity_scores.argsort()[::-1]
-        filtered_recipes = [recipe_details[i] for i in sorted_indices[:10]]
-
-        most_similar_recipe = filtered_recipes[0] if filtered_recipes else None
-        return filtered_recipes, most_similar_recipe
-    else:
-        return [], None
-    
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def home():
-    global recipes_df 
+    """Render the main page."""
+    return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None)
 
-    if request.method == 'POST':
-        prompt = request.form['prompt']
-        dietary_restrictions = request.form.get('dietary_restrictions', '')
-        eating_habits = request.form.get('eating_habits', '')
-        budget = request.form.get('budget', '')
+@app.route('/search', methods=['POST'])
+def search_recipe():
+    """Search for recipes by name and calculate cosine similarity."""
+    prompt = request.json.get("prompt", "").lower().strip()
 
-        similar_recipes, most_similar_recipe = find_similar_recipes(prompt, dietary_restrictions, eating_habits, budget)
+    if not prompt:
+        return jsonify({"recipes": []})
 
-        adjectives = ["hearty", "rich", "flavorful", "delicious", "quick", "spicy", "creamy", "crispy", 
-                      "easy", "healthy", "tangy", "savory", "zesty", "decadent", "aromatic", "refreshing", 
-                      "wholesome", "chewy", "light", "smoky", "buttery", "indulgent", "velvety"]
-        
-        occasions = ["family gatherings", "weeknight dinners", "special occasions", "holiday meals", 
-                     "picnics", "dinner parties", "quick lunch", "meal prep", "romantic dinners", 
-                     "birthday celebrations", "anniversaries", "lazy weekends", "game nights"]
-        
-        meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "midnight snack", 
-                      "afternoon tea", "weekend brunch", "late-night cravings"]
-        
-        cooking_techniques = ["grilled", "baked", "stir-fried", "steamed", "roasted", 
-                              "sautéed", "smoked", "poached", "seared", "deep-fried"]
-        
-        cuisine_styles = ["Italian", "Chinese", "Mexican", "Indian", "Thai", "French", 
-                          "Japanese", "Korean", "Mediterranean", "Vietnamese", "American", "Caribbean"]
-        
-        ingredients_list = ["chicken", "beef", "pasta", "tofu", "mushrooms", "tomatoes", 
-                            "spinach", "avocado", "cheese", "lemongrass", "ginger", 
-                            "coriander", "coconut milk", "onions", "garlic"]
+    # Find matching recipes by name in the CSV
+    matching_recipes = recipes_df[recipes_df['name'].str.contains(prompt, case=False, na=False)]
 
-        name_prompts = [
-            f"The ultimate {random.choice(adjectives)} {prompt} side dish.",
-            f"{random.choice(cooking_techniques).capitalize()} {prompt} with {random.choice(ingredients_list)}.",
-            f"{random.choice(adjectives).capitalize()} {prompt} for {random.choice(occasions)}.",
-            f"{random.choice(cuisine_styles)}-style {prompt} recipe.",
-            f"A {random.choice(adjectives)} {prompt} that delights."
-        ]
+    if matching_recipes.empty:
+        return jsonify({"recipes": []})
 
+    # Encode the search query using the sentence model
+    prompt_embedding = sentence_model.encode(prompt)
 
+    # Calculate cosine similarity for each recipe
+    similarities = []
+    for _, recipe in matching_recipes.iterrows():
+        recipe_text = f"{recipe['name']} {recipe['description']}"
+        recipe_embedding = sentence_model.encode(recipe_text)
+        similarity = cosine_similarity([prompt_embedding], [recipe_embedding])[0][0]
+        similarities.append((recipe['name'], similarity))
 
-        description_prompts = [
-            f"This {prompt} recipe is a {random.choice(adjectives)} dish that’s perfect for {random.choice(occasions)}.",
-            f"A {random.choice(adjectives)} {prompt} dish that’s {random.choice(adjectives)} and {random.choice(adjectives)}.",
-            f"Try this {prompt} for a perfect {random.choice(meal_times)}. It’s easy to make and delicious.",
-            f"Enjoy this {random.choice(adjectives)} {prompt}, a wonderful addition to {random.choice(occasions)}.",
-            f"This {prompt} recipe will impress your guests at {random.choice(occasions)} and is ideal for {random.choice(meal_times)}.",
-            f"Packed with flavor and made in no time, {prompt} is perfect for {random.choice(occasions)}.",
-            f"An {random.choice(adjectives)} {prompt} that’s {random.choice(adjectives)} and great for {random.choice(meal_times)}."
-        ]
+    # Sort by similarity and return the top 10 recipes
+    sorted_recipes = sorted(similarities, key=lambda x: x[1], reverse=True)[:10]
+    recipes = [{"name": r[0], "similarity": f"{r[1]:.4f}"} for r in sorted_recipes]
 
-        tags_prompts = [
-            f"Relevant tags for '{prompt}' (comma-separated).",
-            f"List keywords or tags associated with the dish {prompt}.",
-            f"Suggest tags for {prompt} focusing on dietary and cuisine types.",
-            f"Tags for {prompt}: cuisine, occasion, and key ingredients.",
-            f"What are the best descriptive tags for {prompt}? Include its {random.choice(cuisine_styles)} origins."
-        ]
+    return jsonify({"recipes": recipes})
 
-        steps_prompts = [
-            f"Step-by-step guide for making '{prompt}' in 10 steps or less.",
-            f"Step-by-step to guide for a concise recipe method for {prompt}.",
-            f"Step-by-step guide for a simple cooking procedure for the dish {prompt}.",
-            f"Step-by-step guide for the preparation of {prompt} using {random.choice(cooking_techniques)} techniques.",
-            f"Step-by-step guide for how to prepare {prompt} for a {random.choice(meal_times)}."
-        ]
-
-        ingredients_prompts = [
-            f"List the ingredients needed for {prompt}.",
-            f"Provide the ingredient list for the dish {prompt}.",
-            f"Suggest ingredients for making {prompt}.",
-            f"What are the essential {random.choice(cuisine_styles)} ingredients for {prompt}?",
-            f"Include {random.choice(ingredients_list)} in the ingredients list for {prompt}."
-        ]
-
-        # Randomly pick one prompt from each category
-        selected_name_prompt = random.choice(name_prompts)
-        selected_description_prompt = random.choice(description_prompts)
-        selected_tags_prompt = random.choice(tags_prompts)
-        selected_steps_prompt = random.choice(steps_prompts)
-        selected_ingredients_prompt = random.choice(ingredients_prompts)
-
-        name = pipe(selected_name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-        description = pipe(selected_description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-        tags = pipe(selected_tags_prompt, max_length=50, num_return_sequences=1)[0]['generated_text'].split(', ')
-        steps = pipe(selected_steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
-        ingredients = pipe(selected_ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
-
-        cleaned_name = re.sub(r"[\d]+(\.\d+)?\s*(sec|oz|g|ml|per|for|each|serving|minute|hour|day)s?", "", name, flags=re.IGNORECASE)
-        cleaned_name = re.sub(r"[^\w\s\-:,.]+", "", cleaned_name).strip()  # Remove special characters
-
-        # Final clean text
-        name = clean_text(cleaned_name)
-        description = clean_text(description)
-        tags = [clean_text(tag) for tag in tags if tag.strip()]  
-        steps = [clean_text(step) for step in steps if step.strip()] 
-        ingredients = [clean_text(ingredient) for ingredient in ingredients if ingredient.strip()]  
-
-        new_recipe_data = {
-            'name': name,
-            'id': random.randint(100000, 999999), 
-            'minutes': random.randint(15, 60),  
-            'contributor_id': random.randint(1000, 9999), 
-            'submitted': pd.Timestamp.now().strftime('%Y/%m/%d'),  
-            'tags': ', '.join(tags),  
-            'nutrition': [random.randint(100, 500) for _ in range(7)],  
-            'n_steps': len(steps),  
-            'steps': steps,  
-            'description': description,
-            'ingredients': ingredients, 
-            'n_ingredients': len(ingredients),  
-            'amount': random.randint(50, 150),  
-        }
-
-        recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe_data])], ignore_index=True)
-        recipes_df.to_csv(dataset_path, index=False)  
-
-        return render_template(
-            'restaurantMenuGenerator.html', 
-            recipes=similar_recipes, 
-            new_recipe=new_recipe_data,
-            most_similar_recipe=most_similar_recipe
-        )
-
-    return render_template('restaurantMenuGenerator.html', recipes=None, new_recipe=None, most_similar_recipe=None)
-
-@app.route('/generate_random_recipe', methods=['GET'])
+@app.route('/random', methods=['GET'])
 def random_recipe():
-    """Generate random recipes based on category or pick from all if no category is specified."""
-    category = request.args.get('category', '').lower()
+    """Return a list of 10 random recipes."""
+    random_recipes = recipes_df.sample(n=10)[['name', 'ingredients', 'steps']].to_dict(orient='records')
+    return jsonify(random_recipes)
 
-    chinese_keywords = [
-    "dumplings", "stir-fry", "peking duck", "dim sum", "hot pot", "sweet and sour", 
-    "noodles", "wonton", "kung pao", "szechuan", "chow mein", "spring rolls", 
-    "sweet and sour pork", "kung pao chicken", "mapo tofu", "char siu", "egg foo young", 
-    "hot and sour soup", "chinese dumplings", "szechuan peppercorns", "beef and broccoli", 
-    "general tso's chicken", "fried rice", "baozi", "shumai", "peking duck", "lobster cantonese style", 
-    "chinese bbq ribs", "wonton soup", "dim sum platter", "gong bao chicken", "shanghai soup dumplings"
-    ]
+@app.route('/recipe_details', methods=['GET'])
+def recipe_details():
+    """Return details of a specific recipe."""
+    name = request.args.get("name", "").lower()
+    recipe = recipes_df[recipes_df['name'] == name].iloc[0]
+    ingredients = recipe['ingredients'].split(', ')
+    steps = recipe['steps'].split('. ')
+    return jsonify({
+        "name": recipe['name'].title(),
+        "ingredients": ingredients,
+        "steps": steps
+    })
 
-    western_keywords = [
-    "burger", "steak", "pizza", "sandwich", "pasta", "barbecue", "roast", "salad", "cheesecake", 
-    "french fries", "chicken wings", "fried chicken", "bbq ribs", "grilled cheese", "fish and chips", 
-    "buffalo wings", "spaghetti", "lasagna", "beef wellington", "peking duck", "cobb salad", "roast chicken", 
-    "chicken alfredo", "tacos", "pastrami sandwich", "caesar salad", "pork chops", "meatloaf", "cheeseburger", 
-    "pulled pork", "clam chowder", "bangers and mash", "bacon and eggs", "steak frites", "currywurst", "goulash", 
-    "sloppy joes", "quiche", "apple pie", "chicken parmesan", "moussaka", "cornbread"
-    ]
+@app.route('/create_recipe', methods=['POST'])
+def create_recipe():
+    """Create a new recipe."""
+    name_prompt = f"The ultimate {request.json['name']} recipe."
+    description_prompt = f"This {request.json['name']} recipe is perfect for {random.choice(['family dinners', 'special occasions'])}."
+    steps_prompt = f"Step-by-step guide for making {request.json['name']}."
+    ingredients_prompt = f"List the ingredients needed for {request.json['name']}."
 
-    if category == "chinese":
-        filtered_recipes = recipes_df[recipes_df['name'].str.contains('|'.join(chinese_keywords), case=False, na=False)]
-    elif category == "western":
-        filtered_recipes = recipes_df[recipes_df['name'].str.contains('|'.join(western_keywords), case=False, na=False)]
-    else:
-        filtered_recipes = recipes_df
+    name = pipe(name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
+    description = pipe(description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
+    steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
+    ingredients = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
-    random_recipes = filtered_recipes.sample(n=min(10, len(filtered_recipes)))
-    random_recipes_list = random_recipes[['name', 'amount', 'description']].to_dict(orient='records')
+    # Clean the generated data
+    name = clean_text(name)
+    description = clean_text(description)
+    steps = [clean_text(step) for step in steps if step.strip()]
+    ingredients = [clean_text(ingredient) for ingredient in ingredients if ingredient.strip()]
 
-    return jsonify(random_recipes_list)
+    new_recipe = {
+        'name': name,
+        'id': random.randint(100000, 999999),
+        'minutes': random.randint(15, 60),
+        'contributor_id': random.randint(1000, 9999),
+        'submitted': pd.Timestamp.now().strftime('%Y-%m-%d'),
+        'tags': request.json.get('tags', ''),
+        'n_steps': len(steps),
+        'steps': '. '.join(steps),
+        'description': description,
+        'ingredients': ', '.join(ingredients),
+        'n_ingredients': len(ingredients),
+        'amount': random.randint(10, 50)
+    }
 
-if __name__ == "__main__":
+    global recipes_df
+    recipes_df = pd.concat([recipes_df, pd.DataFrame([new_recipe])], ignore_index=True)
+    recipes_df.to_csv(dataset_path, index=False)
+
+    return jsonify(new_recipe)
+
+if __name__ == '__main__':
     app.run(debug=True)
