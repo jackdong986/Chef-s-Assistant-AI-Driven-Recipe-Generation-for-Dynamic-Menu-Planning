@@ -221,7 +221,14 @@
         <!-- Random Recipes Section -->
         <div id="randomSection" class="section">
             <h2>Generate Random Recipes</h2>
+            <label for="categoryFilter">Select Category:</label>
+            <select id="categoryFilter" onchange="fetchRandomRecipes()">
+                <option value="all">All</option>
+                <option value="chinese">Chinese</option>
+                <option value="western">Western</option>
+            </select>
             <button onclick="fetchRandomRecipes()">Generate Random Recipes</button>
+            <input type="text" id="randomSearchBar" placeholder="Search by name..." oninput="filterRandomRecipes()">
             <div id="randomRecipes" class="recipe-list"></div>
         </div>
 
@@ -300,16 +307,16 @@
                 });
         }
 
+        let allRandomRecipes = []; // Store all random recipes for filtering
+
         function fetchRandomRecipes() {
+            const category = document.getElementById('categoryFilter').value;
             showLoading();
-            fetch('/random')
+            fetch(`/random?category=${category}`)
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
-                    if (!data.length) {
-                        alert("No recipes found.");
-                        return;
-                    }
+                    allRandomRecipes = data; // Store fetched recipes for filtering
                     displayRecipes(data, 'randomRecipes');
                 })
                 .catch(error => {
@@ -317,6 +324,14 @@
                     alert("Error fetching random recipes.");
                     console.error(error);
                 });
+        }
+
+        function filterRandomRecipes() {
+            const searchInput = document.getElementById('randomSearchBar').value.toLowerCase();
+            const filteredRecipes = allRandomRecipes.filter(recipe =>
+                recipe.name.toLowerCase().includes(searchInput)
+            );
+            displayRecipes(filteredRecipes, 'randomRecipes');
         }
 
         function displayRecipes(recipes, sectionId) {
@@ -332,23 +347,14 @@
         function viewRecipeDetails(recipeName) {
             showLoading();
             fetch(`/recipe_details?name=${encodeURIComponent(recipeName)}`)
-                .then(response => {
-                    console.log("Response Status:", response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    console.log("Fetched Data:", data); // Log the data for debugging
                     hideLoading();
-
                     if (data.error) {
                         alert("Error: " + data.error);
                         return;
                     }
 
-                    // Populate the recipe details section
                     document.getElementById('recipeName').textContent = data.name;
                     document.getElementById('recipeIngredientsList').innerHTML = data.ingredients.map(
                         ingredient => `<li>${ingredient}</li>`
@@ -360,11 +366,10 @@
                 })
                 .catch(error => {
                     hideLoading();
-                    console.error("Error fetching recipe details:", error); // Log error for debugging
-                    alert("An error occurred while fetching the recipe details. Please try again.");
+                    alert("Error fetching recipe details.");
+                    console.error(error);
                 });
         }
-
         function createRecipe() {
             const recipeDescription = document.getElementById('recipeDescription').value.trim();
             if (!recipeDescription) {
