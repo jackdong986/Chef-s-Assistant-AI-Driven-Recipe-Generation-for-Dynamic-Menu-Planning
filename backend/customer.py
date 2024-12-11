@@ -100,99 +100,41 @@ def recipe_details():
 
 @app.route('/create_recipe', methods=['POST'])
 def create_recipe():
-    """Create a new recipe."""
-    adjectives = ["hearty", "rich", "flavorful", "delicious", "quick", "spicy", "creamy", "crispy", 
-                      "easy", "healthy", "tangy", "savory", "zesty", "decadent", "aromatic", "refreshing", 
-                      "wholesome", "chewy", "light", "smoky", "buttery", "indulgent", "velvety"]
-        
-    occasions = ["family gatherings", "weeknight dinners", "special occasions", "holiday meals", 
-                     "picnics", "dinner parties", "quick lunch", "meal prep", "romantic dinners", 
-                     "birthday celebrations", "anniversaries", "lazy weekends", "game nights"]
-        
-    meal_times = ["breakfast", "lunch", "dinner", "snack", "brunch", "midnight snack", 
-                      "afternoon tea", "weekend brunch", "late-night cravings"]
-        
-    cooking_techniques = ["grilled", "baked", "stir-fried", "steamed", "roasted", 
-                              "sautéed", "smoked", "poached", "seared", "deep-fried"]
-        
-    cuisine_styles = ["Italian", "Chinese", "Mexican", "Indian", "Thai", "French", 
-                          "Japanese", "Korean", "Mediterranean", "Vietnamese", "American", "Caribbean"]
-        
-    ingredients_list = ["chicken", "beef", "pasta", "tofu", "mushrooms", "tomatoes", 
-                            "spinach", "avocado", "cheese", "lemongrass", "ginger", 
-                            "coriander", "coconut milk", "onions", "garlic"]
-    # Define lists for additional prompts
-    name_prompts = [
-        f"The ultimate {random.choice(adjectives)} {request.json['name']} side dish.",
-        f"{random.choice(cooking_techniques).capitalize()} {request.json['name']} with {random.choice(ingredients_list)}.",
-        f"{random.choice(adjectives).capitalize()} {request.json['name']} for {random.choice(occasions)}.",
-        f"{random.choice(cuisine_styles)}-style {request.json['name']} recipe.",
-        f"A {random.choice(adjectives)} {request.json['name']} that delights."
-    ]
-    
-    description_prompts = [
-        f"This {request.json['name']} recipe is a {random.choice(adjectives)} dish that’s perfect for {random.choice(occasions)}.",
-        f"A {random.choice(adjectives)} {request.json['name']} dish that’s {random.choice(adjectives)} and {random.choice(adjectives)}.",
-        f"Try this {request.json['name']} for a perfect {random.choice(meal_times)}. It’s easy to make and delicious.",
-        f"Enjoy this {random.choice(adjectives)} {request.json['name']}, a wonderful addition to {random.choice(occasions)}.",
-        f"This {request.json['name']} recipe will impress your guests at {random.choice(occasions)} and is ideal for {random.choice(meal_times)}.",
-        f"Packed with flavor and made in no time, {request.json['name']} is perfect for {random.choice(occasions)}.",
-        f"An {random.choice(adjectives)} {request.json['name']} that’s {random.choice(adjectives)} and great for {random.choice(meal_times)}."
-    ]
-    
-    tags_prompts = [
-        f"Relevant tags for '{request.json['name']}' (comma-separated).",
-        f"List keywords or tags associated with the dish {request.json['name']}.",
-        f"Suggest tags for {request.json['name']} focusing on dietary and cuisine types.",
-        f"Tags for {request.json['name']}: cuisine, occasion, and key ingredients.",
-        f"What are the best descriptive tags for {request.json['name']}? Include its {random.choice(cuisine_styles)} origins."
-    ]
-    
-    steps_prompts = [
-        f"Step-by-step guide for making '{request.json['name']}' in 10 steps or less.",
-        f"Step-by-step guide for a concise recipe method for {request.json['name']}.",
-        f"Step-by-step guide for a simple cooking procedure for the dish {request.json['name']}.",
-        f"Step-by-step guide for the preparation of {request.json['name']} using {random.choice(cooking_techniques)} techniques.",
-        f"Step-by-step guide for how to prepare {request.json['name']} for a {random.choice(meal_times)}."
-    ]
-    
-    ingredients_prompts = [
-        f"List the ingredients needed for {request.json['name']}.",
-        f"Provide the ingredient list for the dish {request.json['name']}.",
-        f"Suggest ingredients for making {request.json['name']}.",
-        f"What are the essential {random.choice(cuisine_styles)} ingredients for {request.json['name']}?",
-        f"Include {random.choice(ingredients_list)} in the ingredients list for {request.json['name']}."
-    ]
-    
-    # Randomly pick one prompt from each category
-    selected_name_prompt = random.choice(name_prompts)
-    selected_description_prompt = random.choice(description_prompts)
-    selected_tags_prompt = random.choice(tags_prompts)
-    selected_steps_prompt = random.choice(steps_prompts)
-    selected_ingredients_prompt = random.choice(ingredients_prompts)
-    
-    # Use the randomly selected prompts to generate content
-    name = pipe(selected_name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-    description = pipe(selected_description_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-    tags = pipe(selected_tags_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
-    steps = pipe(selected_steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
-    ingredients = pipe(selected_ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
+    """Create a new recipe based on a description provided by the user."""
+    user_description = request.json.get("description", "").strip()
+    if not user_description:
+        return jsonify({"error": "Description is required"}), 400
+
+    # Define the prompts dynamically using the user's description
+    name_prompt = f"Generate a creative name for: {user_description}."
+    description_prompt = f"Describe this dish in detail: {user_description}."
+    ingredients_prompt = f"List the main ingredients for: {user_description}."
+    steps_prompt = f"Provide step-by-step instructions for preparing: {user_description}."
+
+    # Generate the recipe components
+    name = pipe(name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
+    description = pipe(description_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].strip()
+    steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
+    ingredients = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
 
     # Clean the generated data
     name = clean_text(name)
     description = clean_text(description)
     steps = [clean_text(step) for step in steps if step.strip()]
     ingredients = [clean_text(ingredient) for ingredient in ingredients if ingredient.strip()]
-    tags = [tag.strip() for tag in tags.split(',') if tag.strip()]
 
-    # Create new recipe entry
+    # Enhance ingredients list with suitable additions
+    additional_ingredients = get_suitable_ingredients(user_description)
+    ingredients.extend([ingredient for ingredient in additional_ingredients if ingredient not in ingredients])
+
+    # Create the new recipe entry
     new_recipe = {
         'name': name,
         'id': random.randint(100000, 999999),
         'minutes': random.randint(15, 60),
         'contributor_id': random.randint(1000, 9999),
         'submitted': pd.Timestamp.now().strftime('%Y-%m-%d'),
-        'tags': ', '.join(tags),
+        'tags': request.json.get('tags', ''),
         'n_steps': len(steps),
         'steps': '. '.join(steps),
         'description': description,
@@ -207,6 +149,49 @@ def create_recipe():
     recipes_df.to_csv(dataset_path, index=False)
 
     return jsonify(new_recipe)
+
+
+def get_suitable_ingredients(description):
+    """Suggest additional ingredients based on the description."""
+    additional_ingredients_map = {
+        # Indian Recipes
+        "spicy chicken curry": ["garam masala", "cumin", "turmeric", "coriander", "ginger", "chilies", "cardamom", "cloves", "bay leaves", "yogurt"],
+
+        # Western Recipes
+        "pasta": ["parmesan cheese", "basil", "olive oil", "garlic", "oregano", "tomato paste", "black pepper", "cream", "spinach", "mushrooms"],
+        "salad": ["lettuce", "cucumber", "olive oil", "lemon juice", "feta cheese", "avocado", "cherry tomatoes", "red onions", "croutons", "balsamic vinegar"],
+        "soup": ["bay leaves", "thyme", "celery", "carrots", "parsley", "chicken broth", "cream", "leeks", "garlic", "potatoes"],
+        "steak": ["salt", "pepper", "garlic", "butter", "rosemary", "thyme", "onion powder", "paprika", "red wine", "mushrooms"],
+        "burger": ["ground beef", "cheddar cheese", "lettuce", "tomatoes", "pickles", "ketchup", "mustard", "brioche buns", "onions", "bacon"],
+        "mac and cheese": ["elbow pasta", "cheddar cheese", "milk", "butter", "flour", "parmesan cheese", "breadcrumbs", "paprika", "garlic powder", "black pepper"],
+        "roast chicken": ["whole chicken", "butter", "thyme", "rosemary", "garlic", "lemon", "olive oil", "paprika", "onions", "carrots"],
+        "mashed potatoes": ["potatoes", "butter", "milk", "cream", "garlic", "parsley", "salt", "pepper", "chives", "cheddar cheese"],
+        "caesar salad": ["romaine lettuce", "parmesan cheese", "croutons", "caesar dressing", "olive oil", "anchovies", "garlic", "lemon juice", "black pepper", "mustard"],
+        "lasagna": ["lasagna sheets", "ground beef", "tomato sauce", "ricotta cheese", "mozzarella cheese", "parmesan cheese", "onions", "garlic", "basil", "oregano"],
+
+        # Chinese Recipes
+        "fried rice": ["soy sauce", "eggs", "spring onions", "carrots", "peas", "garlic", "ginger", "sesame oil", "cooked rice", "chicken"],
+        "dumplings": ["ground pork", "ginger", "spring onions", "soy sauce", "sesame oil", "wonton wrappers", "cabbage", "garlic", "chili oil", "black vinegar"],
+        "hot and sour soup": ["tofu", "wood ear mushrooms", "bamboo shoots", "white pepper", "black vinegar", "egg", "soy sauce", "ginger", "chicken broth", "sesame oil"],
+        "sweet and sour pork": ["pork", "pineapple", "bell peppers", "soy sauce", "ketchup", "sugar", "white vinegar", "cornstarch", "garlic", "onions"],
+        "kung pao chicken": ["chicken breast", "peanuts", "dried chilies", "soy sauce", "hoisin sauce", "garlic", "ginger", "spring onions", "sesame oil", "cornstarch"],
+        "mapo tofu": ["tofu", "ground pork", "doubanjiang (chili bean paste)", "soy sauce", "ginger", "garlic", "spring onions", "Sichuan peppercorns", "sesame oil", "chicken broth"],
+        "beef chow mein": ["chow mein noodles", "beef strips", "soy sauce", "oyster sauce", "garlic", "ginger", "carrots", "cabbage", "spring onions", "sesame oil"],
+        "Peking duck": ["duck", "hoisin sauce", "cucumber", "spring onions", "mandarin pancakes", "garlic", "ginger", "soy sauce", "honey", "rice vinegar"],
+        "char siu pork": ["pork shoulder", "hoisin sauce", "soy sauce", "honey", "five-spice powder", "garlic", "ginger", "rice vinegar", "sesame oil", "sugar"],
+        "egg drop soup": ["chicken broth", "eggs", "cornstarch", "spring onions", "soy sauce", "ginger", "white pepper", "sesame oil", "salt", "water"],
+
+        # General Additions
+        "general": ["salt", "pepper", "water", "sugar", "flour", "butter", "vegetable oil"]
+    }
+
+    # Match based on description keywords
+    for key, additional_ingredients in additional_ingredients_map.items():
+        if key in description.lower():
+            return additional_ingredients
+
+    # Default suggestion if no specific match is found
+    return additional_ingredients_map["general"]
 
 if __name__ == '__main__':
     app.run(debug=True)

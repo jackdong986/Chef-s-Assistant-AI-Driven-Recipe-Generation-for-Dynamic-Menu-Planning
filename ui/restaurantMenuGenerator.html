@@ -12,7 +12,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-    
+
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f8f9fa;
@@ -20,7 +20,7 @@
             flex-direction: row;
             color: #333;
         }
-    
+
         /* Sidebar Styling */
         .sidebar {
             width: 220px;
@@ -35,7 +35,7 @@
             position: fixed;
             left: 0;
         }
-    
+
         .sidebar a {
             text-decoration: none;
             color: white;
@@ -47,17 +47,17 @@
             border-radius: 5px;
             transition: background 0.3s ease, color 0.3s ease;
         }
-    
+
         .sidebar a.active {
             background-color: #FFD500;
             color: #003d7e;
             font-weight: bold;
         }
-    
+
         .sidebar a:hover {
             background-color: #003d7e;
         }
-    
+
         /* Content Area */
         .content {
             margin-left: 240px;
@@ -66,27 +66,27 @@
             background-color: #f8f9fa;
             min-height: 100vh;
         }
-    
+
         h1 {
             font-size: 2.5em;
             color: #00509E;
             margin-bottom: 20px;
         }
-    
+
         h2 {
             font-size: 1.8em;
             margin-bottom: 15px;
             color: #003d7e;
         }
-    
+
         .section {
             display: none;
         }
-    
+
         .section.active {
             display: block;
         }
-    
+
         .menu-item {
             background-color: #ffffff;
             padding: 20px;
@@ -96,24 +96,27 @@
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             cursor: pointer;
         }
-    
+
         .menu-item:hover {
             transform: translateY(-5px);
             box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
         }
-    
-        ul, ol {
+
+        ul,
+        ol {
             padding-left: 20px;
             margin-top: 10px;
         }
-    
-        ul li, ol li {
+
+        ul li,
+        ol li {
             margin-bottom: 10px;
             line-height: 1.5;
         }
-    
+
         /* Buttons and Inputs */
-        button, input[type="text"] {
+        button,
+        input[type="text"] {
             width: 100%;
             padding: 12px 15px;
             margin-bottom: 20px;
@@ -121,7 +124,7 @@
             border-radius: 5px;
             font-size: 16px;
         }
-    
+
         button {
             background-color: #FFD500;
             color: #003d7e;
@@ -129,35 +132,35 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-    
+
         button:hover {
             background-color: #e5be00;
         }
-    
+
         input[type="text"] {
             background-color: #ffffff;
             border: 1px solid #ddd;
             color: #555;
             font-size: 16px;
         }
-    
+
         input[type="text"]:focus {
             outline: none;
             border-color: #00509E;
             box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);
         }
-    
+
         /* Loading Spinner */
         .loading {
             display: none;
             text-align: center;
             margin-top: 20px;
         }
-    
+
         .loading img {
             width: 60px;
         }
-    
+
         /* Recipe Details Section */
         #recipeDetails {
             background-color: #ffffff;
@@ -165,34 +168,34 @@
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
-    
+
         #recipeName {
             font-size: 1.8em;
             margin-bottom: 15px;
             color: #003d7e;
         }
-    
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .sidebar {
                 width: 180px;
             }
-    
+
             .content {
                 margin-left: 200px;
                 padding: 20px;
             }
-    
+
             h1 {
                 font-size: 2em;
             }
-    
+
             h2 {
                 font-size: 1.5em;
             }
         }
     </style>
-    
+
 </head>
 
 <body>
@@ -225,7 +228,9 @@
         <!-- Create New Recipe Section -->
         <div id="createSection" class="section">
             <h2>Create a New Recipe</h2>
-            <input type="text" id="newRecipeName" placeholder="Recipe Name">
+            <textarea id="recipeDescription"
+                placeholder="Describe the recipe you want to create... (e.g., A spicy chicken curry with bold flavors)"
+                rows="5"></textarea>
             <button onclick="createRecipe()">Create Recipe</button>
             <div id="newRecipeDetails" class="recipe-list"></div>
         </div>
@@ -268,123 +273,131 @@
         }
 
         function searchRecipe() {
-        const searchInput = document.getElementById('searchBar').value.trim();
-        if (!searchInput) {
-            alert("Please enter a recipe name to search.");
-            return;
+            const searchInput = document.getElementById('searchBar').value.trim();
+            if (!searchInput) {
+                alert("Please enter a recipe name to search.");
+                return;
+            }
+            showLoading();
+            fetch('/search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ prompt: searchInput })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (!data.recipes.length) {
+                        alert("No recipes found.");
+                        return;
+                    }
+                    displayRecipes(data.recipes, 'searchResults');
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert("Error searching recipes.");
+                    console.error(error);
+                });
         }
-        showLoading();
-        fetch('/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: searchInput })
-        })
-            .then(response => response.json())
-            .then(data => {
-                hideLoading();
-                if (!data.recipes.length) {
-                    alert("No recipes found.");
-                    return;
-                }
-                displayRecipes(data.recipes, 'searchResults');
-            })
-            .catch(error => {
-                hideLoading();
-                alert("Error searching recipes.");
-                console.error(error);
-            });
-    }
 
-    function fetchRandomRecipes() {
-        showLoading();
-        fetch('/random')
-            .then(response => response.json())
-            .then(data => {
-                hideLoading();
-                if (!data.length) {
-                    alert("No recipes found.");
-                    return;
-                }
-                displayRecipes(data, 'randomRecipes');
-            })
-            .catch(error => {
-                hideLoading();
-                alert("Error fetching random recipes.");
-                console.error(error);
-            });
-    }
+        function fetchRandomRecipes() {
+            showLoading();
+            fetch('/random')
+                .then(response => response.json())
+                .then(data => {
+                    hideLoading();
+                    if (!data.length) {
+                        alert("No recipes found.");
+                        return;
+                    }
+                    displayRecipes(data, 'randomRecipes');
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert("Error fetching random recipes.");
+                    console.error(error);
+                });
+        }
 
         function displayRecipes(recipes, sectionId) {
-        const container = document.getElementById(sectionId);
-        container.innerHTML = recipes.map(recipe => `
+            const container = document.getElementById(sectionId);
+            container.innerHTML = recipes.map(recipe => `
             <div class="menu-item" onclick="viewRecipeDetails('${recipe.name}')">
                 <h3>${recipe.name}</h3>
                 ${recipe.similarity ? `<p>Similarity: ${recipe.similarity}</p>` : ''}
             </div>
         `).join('');
-    }
+        }
 
-    function viewRecipeDetails(recipeName) {
-    showLoading();
-    fetch(`/recipe_details?name=${encodeURIComponent(recipeName)}`)
-        .then(response => {
-            console.log("Response Status:", response.status);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Fetched Data:", data); // Log the data for debugging
-            hideLoading();
+        function viewRecipeDetails(recipeName) {
+            showLoading();
+            fetch(`/recipe_details?name=${encodeURIComponent(recipeName)}`)
+                .then(response => {
+                    console.log("Response Status:", response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Fetched Data:", data); // Log the data for debugging
+                    hideLoading();
 
-            if (data.error) {
-                alert("Error: " + data.error);
-                return;
-            }
+                    if (data.error) {
+                        alert("Error: " + data.error);
+                        return;
+                    }
 
-            // Populate the recipe details section
-            document.getElementById('recipeName').textContent = data.name;
-            document.getElementById('recipeIngredientsList').innerHTML = data.ingredients.map(
-                ingredient => `<li>${ingredient}</li>`
-            ).join('');
-            document.getElementById('recipeStepsList').innerHTML = data.steps.map(
-                step => `<li>${step}</li>`
-            ).join('');
-            showSection('recipeDetails');
-        })
-        .catch(error => {
-            hideLoading();
-            console.error("Error fetching recipe details:", error); // Log error for debugging
-            alert("An error occurred while fetching the recipe details. Please try again.");
-        });
-}
+                    // Populate the recipe details section
+                    document.getElementById('recipeName').textContent = data.name;
+                    document.getElementById('recipeIngredientsList').innerHTML = data.ingredients.map(
+                        ingredient => `<li>${ingredient}</li>`
+                    ).join('');
+                    document.getElementById('recipeStepsList').innerHTML = data.steps.map(
+                        step => `<li>${step}</li>`
+                    ).join('');
+                    showSection('recipeDetails');
+                })
+                .catch(error => {
+                    hideLoading();
+                    console.error("Error fetching recipe details:", error); // Log error for debugging
+                    alert("An error occurred while fetching the recipe details. Please try again.");
+                });
+        }
 
         function createRecipe() {
-            const newRecipeName = document.getElementById('newRecipeName').value.trim();
-            if (!newRecipeName) {
-                alert("Please enter a recipe name to create.");
+            const recipeDescription = document.getElementById('recipeDescription').value.trim();
+            if (!recipeDescription) {
+                alert("Please enter a description for the recipe.");
                 return;
             }
             showLoading();
             fetch('/create_recipe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newRecipeName })
+                body: JSON.stringify({ description: recipeDescription })
             })
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
+                    if (data.error) {
+                        alert(`Error: ${data.error}`);
+                        return;
+                    }
                     document.getElementById('newRecipeDetails').innerHTML = `
-                        <div class="menu-item">
-                            <h3>${data.name}</h3>
-                            <p>Recipe created successfully!</p>
-                        </div>
-                    `;
+                <div class="menu-item">
+                    <h3>${data.name}</h3>
+                    <p><strong>Description:</strong> ${data.description}</p>
+                    <p><strong>Ingredients:</strong> ${data.ingredients}</p>
+                    <p><strong>Steps:</strong></p>
+                    <ol>${data.steps.split('. ').map(step => `<li>${step}</li>`).join('')}</ol>
+                </div>
+            `;
                 })
                 .catch(error => {
                     hideLoading();
                     alert("Error creating recipe.");
+                    console.error(error);
                 });
         }
 
