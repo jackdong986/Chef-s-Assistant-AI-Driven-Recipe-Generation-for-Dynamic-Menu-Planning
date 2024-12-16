@@ -228,7 +228,6 @@
                 <option value="western">Western</option>
             </select>
             <button onclick="fetchRandomRecipes()">Generate Random Recipes</button>
-            <input type="text" id="randomSearchBar" placeholder="Search by name..." oninput="filterRandomRecipes()">
             <div id="randomRecipes" class="recipe-list"></div>
         </div>
 
@@ -324,14 +323,6 @@
                     alert("Error fetching random recipes.");
                     console.error(error);
                 });
-        }
-
-        function filterRandomRecipes() {
-            const searchInput = document.getElementById('randomSearchBar').value.toLowerCase();
-            const filteredRecipes = allRandomRecipes.filter(recipe =>
-                recipe.name.toLowerCase().includes(searchInput)
-            );
-            displayRecipes(filteredRecipes, 'randomRecipes');
         }
 
         function displayRecipes(recipes, sectionId) {
