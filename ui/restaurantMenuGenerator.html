@@ -58,6 +58,46 @@
             background-color: #003d7e;
         }
 
+        /* Dropdown Styling */
+        #categoryFilter {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #ffffff;
+            color: #555;
+            appearance: none;
+            /* Removes default arrow for custom styling */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23003d7e' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            cursor: pointer;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #categoryFilter:focus {
+            outline: none;
+            border-color: #00509E;
+            box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);
+        }
+
+        #categoryFilter:hover {
+            border-color: #00509E;
+        }
+
+        /* Label Styling */
+        label[for="categoryFilter"] {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: inline-block;
+            color: #003d7e;
+        }
+
+
         /* Content Area */
         .content {
             margin-left: 240px;
@@ -216,19 +256,21 @@
             <input type="text" id="searchBar" placeholder="Search for a recipe...">
             <button onclick="searchRecipe()">Search</button>
             <div id="searchResults" class="recipe-list"></div>
+            <div class="recipe-details" style="display: none;"></div> <!-- Recipe Details Container -->
         </div>
 
-        <!-- Random Recipes Section -->
+        <!--Random Section-->
         <div id="randomSection" class="section">
             <h2>Generate Random Recipes</h2>
             <label for="categoryFilter">Select Category:</label>
-            <select id="categoryFilter" onchange="fetchRandomRecipes()">
+            <select id="categoryFilter">
                 <option value="all">All</option>
                 <option value="chinese">Chinese</option>
                 <option value="western">Western</option>
             </select>
             <button onclick="fetchRandomRecipes()">Generate Random Recipes</button>
             <div id="randomRecipes" class="recipe-list"></div>
+            <div class="recipe-details" style="display: none;"></div>
         </div>
 
         <!-- Create New Recipe Section -->
@@ -238,11 +280,11 @@
                 placeholder="Describe the recipe you want to create... (e.g., A spicy chicken curry with bold flavors)"
                 rows="5"></textarea>
             <button onclick="createRecipe()">Create Recipe</button>
-            <div id="newRecipeDetails" class="recipe-list"></div>
+            <div class="recipe-details" style="display: none;"></div> <!-- Recipe Details Container -->
         </div>
 
         <!-- Recipe Details Section -->
-        <div id="recipeDetails" class="section">
+        <div id="recipeDetails" class="section" style="display: none;">
             <h2 id="recipeName">Recipe Name</h2>
             <h3>Ingredients:</h3>
             <ul id="recipeIngredientsList"></ul>
@@ -251,19 +293,26 @@
         </div>
 
         <!-- Loading Spinner -->
-        <div id="loading" class="loading">
-            <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..."> <!-- Example loading spinner -->
+        <div id="loading" class="loading" style="display: none;">
+            <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading...">
             <p>Processing...</p>
         </div>
     </div>
 
     <script>
         function showSection(sectionId) {
+            // Hide all sections
             document.querySelectorAll('.section').forEach(section => {
                 section.classList.remove('active');
+                // Clear recipe details in non-active sections
+                const details = section.querySelector('.recipe-details');
+                if (details) details.style.display = 'none';
             });
+
+            // Show the selected section
             document.getElementById(sectionId).classList.add('active');
 
+            // Highlight the active sidebar link
             document.querySelectorAll('.sidebar a').forEach(link => {
                 link.classList.remove('active');
             });
@@ -306,22 +355,35 @@
                 });
         }
 
-        let allRandomRecipes = []; // Store all random recipes for filtering
-
+        // Function to fetch random recipes from the server
         function fetchRandomRecipes() {
             const category = document.getElementById('categoryFilter').value;
-            showLoading();
-            fetch(`/random?category=${category}`)
+            const randomRecipesDiv = document.getElementById('randomRecipes');
+            const loadingSpinner = document.getElementById('loading');
+
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
+            randomRecipesDiv.innerHTML = ''; // Clear previous recipes
+
+            fetch(`/random?category=${category}&t=${Date.now()}`)
                 .then(response => response.json())
                 .then(data => {
-                    hideLoading();
-                    allRandomRecipes = data; // Store fetched recipes for filtering
-                    displayRecipes(data, 'randomRecipes');
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
+                    if (data.error) {
+                        randomRecipesDiv.innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        // Render recipes as clickable items
+                        randomRecipesDiv.innerHTML = data.map(recipe => `
+                    <div class="menu-item" onclick="viewRecipeDetails('${recipe.name}')">
+                        <h3>${recipe.name}</h3>
+                    </div>
+                `).join('');
+                    }
                 })
                 .catch(error => {
-                    hideLoading();
-                    alert("Error fetching random recipes.");
-                    console.error(error);
+                    console.error("Error fetching random recipes:", error);
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
+                    randomRecipesDiv.innerHTML = `<p>Error fetching recipes. Please try again later.</p>`;
                 });
         }
 
@@ -336,31 +398,42 @@
         }
 
         function viewRecipeDetails(recipeName) {
-            showLoading();
+            // Get the active section
+            const activeSection = document.querySelector('.section.active');
+            const recipeDetailsDiv = activeSection.querySelector('.recipe-details');
+            const loadingSpinner = document.getElementById('loading');
+
+            if (!recipeDetailsDiv) return;
+
+            // Show loading spinner and clear existing details
+            loadingSpinner.style.display = 'block';
+            recipeDetailsDiv.innerHTML = '<h2>Loading...</h2>';
+            recipeDetailsDiv.style.display = 'block';
+
             fetch(`/recipe_details?name=${encodeURIComponent(recipeName)}`)
                 .then(response => response.json())
                 .then(data => {
-                    hideLoading();
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
                     if (data.error) {
-                        alert("Error: " + data.error);
-                        return;
+                        recipeDetailsDiv.innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        // Populate recipe details
+                        recipeDetailsDiv.innerHTML = `
+                    <h2>${data.name}</h2>
+                    <h3>Ingredients:</h3>
+                    <ul>${data.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}</ul>
+                    <h3>Steps:</h3>
+                    <ol>${data.steps.map(step => `<li>${step}</li>`).join('')}</ol>
+                `;
                     }
-
-                    document.getElementById('recipeName').textContent = data.name;
-                    document.getElementById('recipeIngredientsList').innerHTML = data.ingredients.map(
-                        ingredient => `<li>${ingredient}</li>`
-                    ).join('');
-                    document.getElementById('recipeStepsList').innerHTML = data.steps.map(
-                        step => `<li>${step}</li>`
-                    ).join('');
-                    showSection('recipeDetails');
                 })
                 .catch(error => {
-                    hideLoading();
-                    alert("Error fetching recipe details.");
-                    console.error(error);
+                    console.error("Error fetching recipe details:", error);
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
+                    recipeDetailsDiv.innerHTML = `<p>Error fetching recipe details. Please try again later.</p>`;
                 });
         }
+
         function createRecipe() {
             const recipeDescription = document.getElementById('recipeDescription').value.trim();
             if (!recipeDescription) {

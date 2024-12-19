@@ -70,10 +70,10 @@ def search_recipe():
 
 @app.route('/random', methods=['GET'])
 def random_recipe():
-    """Return a list of 10 random recipes, filtered by category if specified."""
+    """Return a random selection of recipes, filtered by category if specified."""
     category = request.args.get('category', 'all').lower()
 
-    # Define keywords for categories
+    # Define keywords for categories (can be reused for preprocessing)
     chinese_keywords = [
         "dumplings", "stir-fry", "peking duck", "dim sum", "hot pot", "sweet and sour",
         "noodles", "wonton", "kung pao", "szechuan", "chow mein", "spring rolls",
@@ -91,34 +91,59 @@ def random_recipe():
         "sloppy joes", "quiche", "apple pie", "chicken parmesan", "moussaka", "cornbread"
     ]
 
-    # Filter recipes based on category
+    # Pre-compute category classifications if missing
+    if 'category' not in recipes_df.columns:
+        def classify_recipe(name):
+            if pd.isna(name):  # Handle missing names
+                return 'other'
+            name = name.lower()
+            if any(keyword in name for keyword in chinese_keywords):
+                return 'chinese'
+            elif any(keyword in name for keyword in western_keywords):
+                return 'western'
+            else:
+                return 'other'
+
+        recipes_df['category'] = recipes_df['name'].apply(classify_recipe)
+        recipes_df.to_csv(dataset_path, index=False)  # Save back to CSV for future use
+
+    # Filter recipes based on category if provided
     if category == 'chinese':
-        filtered_recipes = recipes_df[recipes_df['name'].str.contains('|'.join(chinese_keywords), case=False, na=False)]
+        filtered_recipes = recipes_df[recipes_df['category'] == 'chinese']
     elif category == 'western':
-        filtered_recipes = recipes_df[recipes_df['name'].str.contains('|'.join(western_keywords), case=False, na=False)]
+        filtered_recipes = recipes_df[recipes_df['category'] == 'western']
     else:
         filtered_recipes = recipes_df  # No filtering for 'all'
 
-    # Randomly sample up to 10 recipes from the filtered results
-    random_recipes = filtered_recipes.sample(n=min(10, len(filtered_recipes)))[['name', 'ingredients', 'steps']].to_dict(orient='records')
+    if filtered_recipes.empty:
+        return jsonify({"error": "No recipes found for the specified category."}), 404
+
+    random_recipes = filtered_recipes.sample(n=min(10, len(filtered_recipes)), random_state=None)[['name']].to_dict(orient='records')
 
     return jsonify(random_recipes)
 
 @app.route('/recipe_details', methods=['GET'])
 def recipe_details():
     """Return details of a specific recipe."""
-    name = request.args.get("name", "").lower().strip()
-    matching_recipes = recipes_df[recipes_df['name'].str.lower() == name]
+    name = request.args.get("name", "").strip().lower()
+
+    # Check if name is provided
+    if not name:
+        return jsonify({"error": "Recipe name is required"}), 400
+
+    # Perform case-insensitive match for the recipe name
+    matching_recipes = recipes_df[recipes_df['name'].str.contains(name, case=False, na=False)]
 
     if matching_recipes.empty:
         return jsonify({"error": "Recipe not found"}), 404
 
+    # Get the first match
     recipe = matching_recipes.iloc[0]
 
-    ingredients = recipe['ingredients']
-    steps = recipe['steps']
+    # Safely extract and parse ingredients and steps
+    ingredients = recipe.get('ingredients', '')
+    steps = recipe.get('steps', '')
 
-    # Ensure ingredients and steps are correctly parsed
     ingredients = ingredients.strip('[]').split(', ') if pd.notna(ingredients) else []
     steps = steps.strip('[]').split('. ') if pd.notna(steps) else []
 
