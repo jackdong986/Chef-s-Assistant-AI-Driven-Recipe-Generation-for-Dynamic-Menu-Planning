@@ -80,9 +80,24 @@ def generate_pairs_for_chunk(args):
                 pairs.append({'text_a': text_a, 'text_b': text_b, 'score': similarity_score})
     return pairs
 
+def save_for_gpt2_format(df, output_file):
+    """Save recipes to a .txt file for GPT-2 text generation."""
+    print(f"Saving recipes for GPT-2 text generation to {output_file}...")
+    with open(output_file, 'w', encoding='utf-8') as f:
+        for _, row in df.iterrows():
+            f.write(f"Recipe Name: {row['name']}\n")
+            f.write(f"Description: {row['description']}\n")
+            f.write(f"Ingredients: {row['ingredients']}\n")
+            f.write(f"Steps: {row['steps']}\n\n")
+    print("Recipes saved successfully!")
+
 if __name__ == "__main__":
     # Preprocess data
     df, num_pairs = preprocess_and_save_data()
+
+    # Save data for GPT-2 text generation
+    gpt2_file = "recipe_generation_dataset.txt"
+    save_for_gpt2_format(df, gpt2_file)
 
     print("Generating similarity pairs...")
     sampled_df = df.sample(min(len(df), num_pairs * 2), random_state=42)
@@ -95,7 +110,6 @@ if __name__ == "__main__":
     # Use multiprocessing
     output_file = "recipe_similarity_pairs.csv"
 
-    # Ensure file exists and create headers
     if not os.path.exists(output_file):
         pd.DataFrame(columns=['text_a', 'text_b', 'score']).to_csv(output_file, index=False)
 
@@ -105,4 +119,3 @@ if __name__ == "__main__":
             # Save the results every 10% of processing
             pd.DataFrame(result).to_csv(output_file, mode='a', index=False, header=False)
             print(f"Saved {i+1}/{len(chunk_pairs)} chunks to {output_file}")
-
