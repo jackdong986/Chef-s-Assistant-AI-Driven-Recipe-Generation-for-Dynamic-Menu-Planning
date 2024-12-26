@@ -239,10 +239,7 @@ def create_recipe():
     # Define the prompts dynamically using the user's description
     name_prompt = f"Generate a creative name for: {user_description}."
     description_prompt = f"Describe this dish in detail as a complete sentence: {user_description}."
-    
-    # Improve the ingredients prompt to ensure 2-3 words per ingredient
-    ingredients_prompt = f"List the main ingredients in 2 to 3 words each for {user_description}. Please list only the key ingredients, each described in 2-3 words (e.g., 'olive oil', 'garlic cloves', 'fresh basil')."
-    
+    ingredients_prompt = f"List the main ingredients such as salt, sugar for {user_description}."
     steps_prompt = f"Provide step-by-step instructions for preparing: {user_description}."
 
     # Generate the recipe components
@@ -251,11 +248,10 @@ def create_recipe():
     steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
     
     # Adjust the prompt to return the correct ingredients list
-    ingredients_response = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text']
+    ingredients_response = pipe(ingredients_prompt, max_length=30, num_return_sequences=1)[0]['generated_text']
     
-    # Clean and format the ingredients (ensure 2 or 3 words per ingredient)
+    # Clean and format the ingredients (no splitting into 3 words)
     ingredients = [clean_text(ingredient.strip()) for ingredient in ingredients_response.split(',') if ingredient.strip()]
-    ingredients = [ingredient if len(ingredient.split()) <= 3 else ' '.join(ingredient.split()[:3]) for ingredient in ingredients]
 
     # Clean other generated data
     name = clean_text(name)
@@ -294,7 +290,7 @@ def get_suitable_ingredients(description):
     additional_ingredients_map = {
     # Indian Recipes
     "spicy chicken curry": ["garam masala", "cumin", "turmeric", "coriander", "ginger", "chilies", "cardamom", "cloves", "bay leaves", "yogurt"],
-
+    
     # Western Recipes
     "pasta": ["parmesan cheese", "basil", "olive oil", "garlic", "oregano", "tomato paste", "black pepper", "cream", "spinach", "mushrooms"],
     "spaghetti": ["parmesan cheese", "basil", "garlic", "olive oil", "tomato sauce", "oregano", "black pepper", "parmesan cheese"],
@@ -307,6 +303,7 @@ def get_suitable_ingredients(description):
     "mac and cheese": ["elbow pasta", "cheddar cheese", "milk", "butter", "flour", "parmesan cheese", "breadcrumbs", "paprika", "garlic powder", "black pepper"],
     "roast chicken": ["whole chicken", "butter", "thyme", "rosemary", "garlic", "lemon", "olive oil", "paprika", "onions", "carrots"],
     "fried chicken": ["chicken pieces", "flour", "buttermilk", "paprika", "garlic powder", "onion powder", "salt", "pepper", "vegetable oil"],
+    "grilled chicken": ["chicken breast", "lemon", "garlic", "olive oil", "rosemary", "thyme", "paprika", "salt", "black pepper"],
     "mashed potatoes": ["potatoes", "butter", "milk", "cream", "garlic", "parsley", "salt", "pepper", "chives", "cheddar cheese"],
     "caesar salad": ["romaine lettuce", "parmesan cheese", "croutons", "caesar dressing", "olive oil", "anchovies", "garlic", "lemon juice", "black pepper", "mustard"],
     "lasagna": ["lasagna sheets", "ground beef", "tomato sauce", "ricotta cheese", "mozzarella cheese", "parmesan cheese", "onions", "garlic", "basil", "oregano"],
@@ -332,16 +329,21 @@ def get_suitable_ingredients(description):
     "sesame chicken": ["chicken breast", "soy sauce", "cornstarch", "honey", "garlic", "ginger", "sesame oil", "sesame seeds", "vinegar", "sugar"],
     "wonton soup": ["wonton wrappers", "ground pork", "spring onions", "soy sauce", "ginger", "sesame oil", "chicken broth", "spinach", "garlic", "water chestnuts"],
 
-    # General Additions
-    "general": ["salt", "pepper", "water", "sugar", "flour", "butter", "vegetable oil"],
-
+    # Additional Recipes
     "chicken": ["chicken breast", "garlic", "olive oil", "lemon", "rosemary", "thyme", "butter", "paprika", "onions", "potatoes"],
     "duck": ["duck breast", "orange zest", "soy sauce", "hoisin sauce", "ginger", "garlic", "scallions", "hoisin sauce", "rice vinegar", "star anise"],
     "lamb": ["ground lamb", "garlic", "rosemary", "olive oil", "mint", "yogurt", "cumin", "onions", "paprika", "coriander"],
     "beef": ["ground beef", "onions", "garlic", "olive oil", "tomato paste", "parsley", "oregano", "pepper", "chili flakes", "paprika"],
-    "cow": ["beef steaks", "salt", "pepper", "butter", "garlic", "rosemary", "onion powder", "olive oil", "paprika", "mushrooms"]
+    "cow": ["beef steaks", "salt", "pepper", "butter", "garlic", "rosemary", "onion powder", "olive oil", "paprika", "mushrooms"],
+    "lamb chops": ["lamb chops", "garlic", "rosemary", "lemon", "olive oil", "thyme", "salt", "black pepper", "mint"],
+    "beef brisket": ["beef brisket", "brown sugar", "paprika", "garlic", "onion powder", "mustard powder", "black pepper", "salt", "bay leaves"],
+    "rack of lamb": ["rack of lamb", "garlic", "rosemary", "olive oil", "salt", "black pepper", "thyme", "lemon", "mustard"],
+    "beef wellington": ["beef tenderloin", "puff pastry", "mushrooms", "prosciutto", "egg yolk", "garlic", "onions", "butter", "parmesan"],
+    "grilled pork chops": ["pork chops", "garlic", "rosemary", "lemon", "olive oil", "black pepper", "salt", "thyme", "paprika"],
+    "grilled shrimp": ["shrimp", "olive oil", "garlic", "lemon", "parsley", "paprika", "salt", "black pepper", "cayenne"],
+    "chicken tikka masala": ["chicken breast", "garam masala", "yogurt", "garlic", "onions", "tomato paste", "cream", "cilantro", "cumin", "coriander"],
+    "beef fajitas": ["beef strips", "bell peppers", "onions", "garlic", "lime", "chili powder", "cumin", "olive oil", "flour tortillas", "jalapenos"]
 }
-
 
     # Match based on description keywords
     description = description.lower()

@@ -432,7 +432,7 @@
 
             // Clean the ingredients
             const cleanIngredients = ingredients.map(item =>
-                item.replace("List the main ingredients in 2 to 3 words each for: ", "").trim()
+                item.replace("List the main ingredients such as salt, sugar for: ", "").trim()
             );
 
             // Clean the steps
@@ -510,7 +510,7 @@
                     const cleanData = {
                         name: data.name.replace("Generate a creative name for: ", "").split('.')[0].trim(), // Remove prefix and take text before first full stop
                         description: data.description.replace("Describe this dish in detail as a complete sentence: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
-                        ingredients: data.ingredients.replace("List the main ingredients in 2 to 3 words each for: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                        ingredients: data.ingredients.replace("List the main ingredients such as salt, sugar for: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
                         steps: data.steps.replace("Provide step-by-step instructions for preparing: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
                     };
 
