@@ -268,6 +268,7 @@
         <a href="javascript:void(0);" onclick="showSection('searchSection')" class="active">Search Recipes</a>
         <a href="javascript:void(0);" onclick="showSection('randomSection')">Random Recipes</a>
         <a href="javascript:void(0);" onclick="showSection('createSection')">Create New Recipe</a>
+        <a href="/all_recipes_page">View All Recipes</a>
     </div>
 
     <!-- Main Content -->
@@ -412,12 +413,17 @@
 
         function displayRecipes(recipes, sectionId) {
             const container = document.getElementById(sectionId);
-            container.innerHTML = recipes.map(recipe => `
+            container.innerHTML = recipes.map(recipe => {
+                // Clean the recipe name by removing unwanted prefix and truncating after the first full stop
+                const cleanName = recipe.name.replace("Generate a creative name for: ", "").split('.')[0].trim();
+
+                return `
             <div class="menu-item" onclick="viewRecipeDetails('${recipe.name}')">
-                <h3>${recipe.name}</h3>
+                <h3>${cleanName}</h3>
                 ${recipe.similarity ? `<p>Similarity: ${recipe.similarity}</p>` : ''}
             </div>
-        `).join('');
+        `;
+            }).join('');
         }
 
         function openPopup(recipeName, ingredients, steps) {
@@ -461,11 +467,18 @@
         }
 
         function createRecipe() {
-            const recipeDescription = document.getElementById('recipeDescription').value.trim();
+            let recipeDescription = document.getElementById('recipeDescription').value.trim();
+
+            // Add a full stop at the end if not present
+            if (!recipeDescription.endsWith('.')) {
+                recipeDescription += '.';
+            }
+
             if (!recipeDescription) {
                 alert("Please enter a description for the recipe.");
                 return;
             }
+
             showLoading();
             fetch('/create_recipe', {
                 method: 'POST',
@@ -479,14 +492,27 @@
                         alert(`Error: ${data.error}`);
                         return;
                     }
+
+                    // Clean up data to remove unwanted prefixes
+                    const cleanData = {
+                        name: data.name.replace("Generate a creative name for: ", "").split('.')[0].trim(), // Remove prefix and take text before first full stop
+                        description: data.description.replace("Describe this dish in detail: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                        ingredients: data.ingredients.replace("List the main ingredients for: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                        steps: data.steps.replace("Provide step-by-step instructions for preparing: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                    };
+
+                    // Split steps into an array and remove any full stop at the end of each step
+                    const steps = cleanData.steps.split('.').map(step => step.trim()).filter(step => step).map(step => `<li>${step}</li>`).join('');
+
+                    // Dynamically update the create section with sanitized data
                     const createSection = document.getElementById('createSection');
                     createSection.innerHTML += `
                 <div class="menu-item">
-                    <h3>${data.name}</h3>
-                    <p><strong>Description:</strong> ${data.description}</p>
-                    <p><strong>Ingredients:</strong> ${data.ingredients}</p>
+                    <h3>${cleanData.name}</h3>
+                    <p><strong>Description:</strong> ${cleanData.description}</p>
+                    <p><strong>Ingredients:</strong> ${cleanData.ingredients}</p>
                     <p><strong>Steps:</strong></p>
-                    <ol>${data.steps.split('. ').map(step => `<li>${step}</li>`).join('')}</ol>
+                    <ol>${steps}</ol>
                 </div>
             `;
                 })

@@ -32,6 +32,82 @@ def clean_text(text):
     text = re.sub(r"[^\w\s\-:,.]+", "", text).strip()  # Remove invalid characters
     return text
 
+#allRecipes.html
+@app.route('/all_recipes_page')
+def all_recipes_page():
+    """Render the All Recipes page."""
+    return render_template('allRecipes.html')
+
+import re
+
+@app.route('/filtered_recipes', methods=['GET'])
+def filtered_recipes():
+    """Fetch filtered recipes based on letter, category, or keyword with pagination."""
+    letter = request.args.get('letter', '').lower()
+    category = request.args.get('category', '').lower()
+    page = int(request.args.get('page', 1))
+    page_size = 10
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    if recipes_df.empty:
+        return jsonify({"error": "No recipes found"}), 404
+    
+    def clean_name(name):
+        # Remove leading numbers or unwanted words like "the" or "in"
+        name = re.sub(r'^[0-9]+', '', name)  # Remove leading numbers
+        name = re.sub(r'^\s*(the|in)\s+', '', name, flags=re.IGNORECASE)  # Remove "the" or "in" at the start
+        return name.strip()
+
+    # Filter by letter (starts with the letter)
+    if letter:
+        recipes_df['name'] = recipes_df['name'].fillna('')  # Replace NaN with an empty string
+        recipes_df['clean_name'] = recipes_df['name'].apply(lambda x: clean_name(x))  # Clean the name
+        filtered = recipes_df[recipes_df['clean_name'].str.lower().str.startswith(letter)]
+    
+    # Filter by category (use the category column directly)
+    if category:
+        filtered = recipes_df[recipes_df['category'].str.lower() == category]
+    
+    # If no valid filter is applied
+    elif not letter and not category:
+        return jsonify({"error": "Invalid filter"}), 400
+
+    # Handle case where no recipes match the filter
+    if filtered.empty:
+        return jsonify({"error": "No recipes match the filter on this page."}), 404
+
+    # Apply pagination
+    total_filtered_recipes = len(filtered)  # Get total count of filtered results
+    total_pages = (total_filtered_recipes + page_size - 1) // page_size  # Calculate total pages
+
+    # Ensure pagination is within valid range
+    if page > total_pages:
+        page = total_pages  # If the requested page is greater than total pages, reset to last page
+
+    # Now apply pagination properly
+    start = (page - 1) * page_size
+    end = start + page_size
+    paginated = filtered.iloc[start:end]
+
+    # Populate recipes from the paginated data
+    recipes = []
+    for _, row in paginated.iterrows():
+        recipes.append({
+            "name": row.get('name', 'Unknown'),
+            "description": row.get('description', 'No description available'),
+            "ingredients": row.get('ingredients', '').strip('[]').split(', '),
+            "steps": row.get('steps', '').strip('[]').split('. ')
+        })
+
+    # Return the response with the recipes and pagination data
+    return jsonify({
+        "recipes": recipes,
+        "total_pages": total_pages,
+        "current_page": page
+    })
+
+#restaurantmenurecipe.html
 @app.route('/')
 def home():
     """Render the main page."""
