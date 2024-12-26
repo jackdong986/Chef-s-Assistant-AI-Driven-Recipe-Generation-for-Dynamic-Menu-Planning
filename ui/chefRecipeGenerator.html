@@ -6,139 +6,358 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chef Recipe Generator</title>
     <style>
+        /* Reset and Global Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f8f9fa;
-            padding: 20px;
-            color: #003d7e;
+            display: flex;
+            flex-direction: row;
+            color: #333;
         }
 
-        .container {
-            max-width: 800px;
-            margin: auto;
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+        /* Sidebar Styling */
+        .sidebar {
+            width: 220px;
+            background-color: #00509E;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 20px;
+            height: 100vh;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            left: 0;
         }
 
-        h2 {
+        .sidebar a {
+            text-decoration: none;
+            color: white;
+            font-size: 18px;
+            padding: 15px 20px;
+            width: 90%;
             text-align: center;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .sidebar a.active {
+            background-color: #FFD500;
             color: #003d7e;
+            font-weight: bold;
+        }
+
+        .sidebar a:hover {
+            background-color: #003d7e;
+        }
+
+        /* Dropdown Styling */
+        #categoryFilter {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: #ffffff;
+            color: #555;
+            appearance: none;
+            /* Removes default arrow for custom styling */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23003d7e' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            cursor: pointer;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        #categoryFilter:focus {
+            outline: none;
+            border-color: #00509E;
+            box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);
+        }
+
+        #categoryFilter:hover {
+            border-color: #00509E;
+        }
+
+        /* Label Styling */
+        label[for="categoryFilter"] {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: inline-block;
+            color: #003d7e;
+        }
+
+        /* Popup Styling */
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            max-height: 80%;
+            overflow-y: auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .close-btn:hover {
+            color: red;
+        }
+
+        /* Content Area */
+        .content {
+            margin-left: 240px;
+            padding: 40px;
+            width: calc(100% - 240px);
+            background-color: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #00509E;
             margin-bottom: 20px;
         }
 
-        button {
-            margin: 10px;
-            padding: 12px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #FFD500;
+        h2 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
             color: #003d7e;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .menu-item {
+            background-color: #ffffff;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        ul,
+        ol {
+            padding-left: 20px;
+            margin-top: 10px;
+        }
+
+        ul li,
+        ol li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        /* Buttons and Inputs */
+        button,
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
             border: none;
             border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #FFD500;
+            color: #003d7e;
+            font-weight: bold;
+            cursor: pointer;
             transition: background-color 0.3s ease;
-            width: 100%;
         }
 
         button:hover {
             background-color: #e5be00;
         }
 
-        .recipe-list,
-        .recipe-steps {
-            background-color: #003d7e;
-            color: #ffffff;
-            padding: 15px;
-            border-radius: 10px;
-            margin-top: 20px;
-        }
-
-        #searchBar {
-            padding: 12px;
-            width: calc(100% - 24px);
+        input[type="text"] {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            color: #555;
             font-size: 16px;
-            border: 1px solid #FFD500;
-            border-radius: 5px;
-            margin-bottom: 20px;
         }
 
-        #loadingIndicator {
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #00509E;
+            box-shadow: 0 0 5px rgba(0, 80, 158, 0.5);
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
             text-align: center;
-            color: #FFD500;
-            font-size: 18px;
-            margin-top: 10px;
-        }
-
-        #ingredientsList {
             margin-top: 20px;
         }
 
-        @media (min-width: 600px) {
-            #searchResults {
-                display: flex;
-                flex-wrap: wrap;
+        .loading img {
+            width: 60px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 180px;
             }
 
-            #searchResults button {
-                flex: 1 1 calc(33% - 20px);
-                margin: 10px;
+            .content {
+                margin-left: 200px;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.5em;
             }
         }
     </style>
+
 </head>
 
 <body>
-    <div class="container">
-        <h2>Chef Recipe Generator</h2>
-        <input type="text" id="searchBar" placeholder="Search for a recipe..." oninput="filterRecipes()" />
-        <button onclick="searchRecipe()">Search Recipe</button>
-        <button onclick="generateRandomRecipe()">Generate Random Recipe</button>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <a href="javascript:void(0);" onclick="showSection('searchSection')" class="active">Search Recipes</a>
+        <a href="javascript:void(0);" onclick="showSection('randomSection')">Random Recipes</a>
+        <a href="javascript:void(0);" onclick="showSection('createSection')">Create New Recipe</a>
+        <a href="/all_recipes_page">View All Recipes</a>
+    </div>
 
-        <!-- Recipe List Section -->
-        <div id="searchResults" class="recipe-list" style="display: none;">
-            <h3>Recipes</h3>
-            <div id="similarRecipesList"></div>
+    <!-- Main Content -->
+    <div class="content">
+        <h1>Chef Recipe Generator</h1>
+
+        <!-- Search Section -->
+        <div id="searchSection" class="section active">
+            <h2>Search Recipes</h2>
+            <input type="text" id="searchBar" placeholder="Search for a recipe...">
+            <button onclick="searchRecipe()">Search</button>
+            <div id="searchResults" class="recipe-list"></div>
         </div>
 
-        <!-- Recipe Details Section -->
-        <div id="recipeDetails" class="recipe-steps" style="display: none;">
-            <h3 id="recipeName">Recipe Name</h3>
-            <h4>Ingredients:</h4>
-            <ul id="recipeIngredientsList"></ul>
-            <h4>Steps:</h4>
-            <ol id="recipeStepsList"></ol>
+        <!--Random Section-->
+        <div id="randomSection" class="section">
+            <h2>Generate Random Recipes</h2>
+            <label for="categoryFilter">Select Category:</label>
+            <select id="categoryFilter">
+                <option value="all">All</option>
+                <option value="chinese">Chinese</option>
+                <option value="western">Western</option>
+            </select>
+            <button onclick="fetchRandomRecipes()">Generate Random Recipes</button>
+            <div id="randomRecipes" class="recipe-list"></div>
         </div>
 
-        <div id="loadingIndicator" style="display: none;">Loading...</div>
+        <!-- Create New Recipe Section -->
+        <div id="createSection" class="section">
+            <h2>Create a New Recipe</h2>
+            <textarea id="recipeDescription"
+                placeholder="Describe the recipe you want to create... (e.g., A spicy chicken curry with bold flavors)"
+                rows="5"></textarea>
+            <button onclick="createRecipe()">Create Recipe</button>
+        </div>
+
+        <div id="recipePopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <span class="close-btn" onclick="closePopup()">&times;</span>
+                <h2 id="popupRecipeName">Recipe Name</h2>
+                <h3>Ingredients:</h3>
+                <ul id="popupRecipeIngredients"></ul>
+                <h3>Steps:</h3>
+                <ol id="popupRecipeSteps"></ol>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading" style="display: none;">
+            <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading...">
+            <p>Processing...</p>
+        </div>
     </div>
 
     <script>
-        function generateRandomRecipe() {
-            showLoading();
-            fetch('/random')
-                .then(response => response.json())
-                .then(data => {
-                    hideLoading();
-                    displayRecipes(data, false);
-                });
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+                // Clear recipe details in non-active sections
+                const details = section.querySelector('.recipe-details');
+                if (details) details.style.display = 'none';
+            });
+
+            // Show the selected section
+            document.getElementById(sectionId).classList.add('active');
+
+            // Highlight the active sidebar link
+            document.querySelectorAll('.sidebar a').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector(`.sidebar a[onclick="showSection('${sectionId}')"]`).classList.add('active');
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
         }
 
         function searchRecipe() {
             const searchInput = document.getElementById('searchBar').value.trim();
-
             if (!searchInput) {
                 alert("Please enter a recipe name to search.");
                 return;
             }
-
-            if (/^\d+$/.test(searchInput)) {
-                alert("Recipe name cannot be a number. Please enter a valid name.");
-                return;
-            }
-
             showLoading();
-
             fetch('/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -147,62 +366,165 @@
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
-                    displayRecipes(data.recipes, true);
+                    if (!data.recipes.length) {
+                        alert("No recipes found.");
+                        return;
+                    }
+                    displayRecipes(data.recipes, 'searchResults');
                 })
                 .catch(error => {
                     hideLoading();
-                    alert("An error occurred while searching. Please try again.");
+                    alert("Error searching recipes.");
+                    console.error(error);
                 });
         }
 
+        // Function to fetch random recipes from the server
+        function fetchRandomRecipes() {
+            const category = document.getElementById('categoryFilter').value;
+            const randomRecipesDiv = document.getElementById('randomRecipes');
+            const loadingSpinner = document.getElementById('loading');
 
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
+            randomRecipesDiv.innerHTML = ''; // Clear previous recipes
 
-        function displayRecipes(recipes, isSearch) {
-            const recipeList = document.getElementById('similarRecipesList');
-            recipeList.innerHTML = recipes
-                .map(recipe =>
-                    `<button onclick="viewRecipeDetails('${recipe.name || recipe}')">${recipe.name || recipe}</button>`
-                )
-                .join('');
-            document.getElementById('searchResults').style.display = 'block';
-            document.getElementById('recipeDetails').style.display = 'none';
+            fetch(`/random?category=${category}&t=${Date.now()}`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
+                    if (data.error) {
+                        randomRecipesDiv.innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        // Render recipes as clickable items
+                        randomRecipesDiv.innerHTML = data.map(recipe => `
+                    <div class="menu-item" onclick="viewRecipeDetails('${recipe.name}')">
+                        <h3>${recipe.name}</h3>
+                    </div>
+                `).join('');
+                    }
+                })
+                .catch(error => {
+                    console.error("Error fetching random recipes:", error);
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
+                    randomRecipesDiv.innerHTML = `<p>Error fetching recipes. Please try again later.</p>`;
+                });
         }
 
-        function viewRecipeDetails(name) {
+        function displayRecipes(recipes, sectionId) {
+            const container = document.getElementById(sectionId);
+            container.innerHTML = recipes.map(recipe => {
+                // Clean the recipe name by removing unwanted prefix and truncating after the first full stop
+                const cleanName = recipe.name.replace("Generate a creative name for: ", "").split('.')[0].trim();
+
+                return `
+            <div class="menu-item" onclick="viewRecipeDetails('${recipe.name}')">
+                <h3>${cleanName}</h3>
+                ${recipe.similarity ? `<p>Similarity: ${recipe.similarity}</p>` : ''}
+            </div>
+        `;
+            }).join('');
+        }
+
+        function openPopup(recipeName, ingredients, steps) {
+            // Populate the popup with recipe details
+            document.getElementById('popupRecipeName').innerText = recipeName;
+            document.getElementById('popupRecipeIngredients').innerHTML = ingredients.map(item => `<li>${item}</li>`).join('');
+            document.getElementById('popupRecipeSteps').innerHTML = steps.map(item => `<li>${item}</li>`).join('');
+
+            // Show the popup
+            document.getElementById('recipePopup').style.display = 'flex';
+        }
+
+        function closePopup() {
+            // Hide the popup
+            document.getElementById('recipePopup').style.display = 'none';
+        }
+
+        function viewRecipeDetails(recipeName) {
+            const loadingSpinner = document.getElementById('loading');
+
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
+
+            fetch(`/recipe_details?name=${encodeURIComponent(recipeName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
+                    if (data.error) {
+                        alert("Error fetching recipe details.");
+                        return;
+                    }
+
+                    // Open popup with fetched data
+                    openPopup(data.name, data.ingredients, data.steps);
+                })
+                .catch(error => {
+                    loadingSpinner.style.display = 'none'; // Hide loading spinner
+                    console.error("Error fetching recipe details:", error);
+                    alert("Error fetching recipe details.");
+                });
+        }
+
+        function createRecipe() {
+            let recipeDescription = document.getElementById('recipeDescription').value.trim();
+
+            // Add a full stop at the end if not present
+            if (!recipeDescription.endsWith('.')) {
+                recipeDescription += '.';
+            }
+
+            if (!recipeDescription) {
+                alert("Please enter a description for the recipe.");
+                return;
+            }
+
             showLoading();
-            fetch(`/recipe_details?name=${encodeURIComponent(name)}`)
+            fetch('/create_recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ description: recipeDescription })
+            })
                 .then(response => response.json())
                 .then(data => {
                     hideLoading();
-                    document.getElementById('recipeName').textContent = data.name;
-                    document.getElementById('recipeIngredientsList').innerHTML = data.ingredients
-                        .map(ingredient => `<li>${ingredient}</li>`)
-                        .join('');
-                    document.getElementById('recipeStepsList').innerHTML = data.steps
-                        .map(step => `<li>${step}</li>`)
-                        .join('');
-                    document.getElementById('recipeDetails').style.display = 'block';
-                    document.getElementById('searchResults').style.display = 'none';
+                    if (data.error) {
+                        alert(`Error: ${data.error}`);
+                        return;
+                    }
+
+                    // Clean up data to remove unwanted prefixes
+                    const cleanData = {
+                        name: data.name.replace("Generate a creative name for: ", "").split('.')[0].trim(), // Remove prefix and take text before first full stop
+                        description: data.description.replace("Describe this dish in detail: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                        ingredients: data.ingredients.replace("List the main ingredients for: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                        steps: data.steps.replace("Provide step-by-step instructions for preparing: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                    };
+
+                    // Split steps into an array and remove any full stop at the end of each step
+                    const steps = cleanData.steps.split('.').map(step => step.trim()).filter(step => step).map(step => `<li>${step}</li>`).join('');
+
+                    // Dynamically update the create section with sanitized data
+                    const createSection = document.getElementById('createSection');
+                    createSection.innerHTML += `
+                <div class="menu-item">
+                    <h3>${cleanData.name}</h3>
+                    <p><strong>Description:</strong> ${cleanData.description}</p>
+                    <p><strong>Ingredients:</strong> ${cleanData.ingredients}</p>
+                    <p><strong>Steps:</strong></p>
+                    <ol>${steps}</ol>
+                </div>
+            `;
+                })
+                .catch(error => {
+                    hideLoading();
+                    alert("Error creating recipe.");
+                    console.error(error);
                 });
         }
 
-        function showLoading() {
-            document.getElementById('loadingIndicator').style.display = 'block';
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingIndicator').style.display = 'none';
-        }
-
-        function filterRecipes() {
-            const input = document.getElementById('searchBar').value.toLowerCase();
-            const buttons = document.querySelectorAll('#similarRecipesList button');
-            buttons.forEach(button => {
-                button.style.display = button.textContent.toLowerCase().includes(input) ? '' : 'none';
-            });
-        }
+        showSection('searchSection');
     </script>
-
 </body>
 
 </html>

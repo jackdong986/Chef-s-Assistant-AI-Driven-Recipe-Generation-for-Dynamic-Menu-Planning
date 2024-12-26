@@ -1,85 +1,121 @@
 import pandas as pd
 import random
 import re
+from tqdm import tqdm
+from multiprocessing import Pool
+import os
 
-# Define the number of pairs to generate
-num_pairs = 100000  # Adjust this as needed
+tqdm.pandas()
 
-# Load only necessary columns and reduce memory usage
-columns_needed = ['name', 'description', 'tags', 'ingredients', 'steps']
-dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
-df = pd.read_csv(dataset_path, encoding='ISO-8859-1', usecols=columns_needed)
+def preprocess_and_save_data():
+    # Define the number of pairs to generate
+    num_pairs = 10000  # Adjust this as needed
 
-# Data Preprocessing and Cleaning
-# Fill NaNs with empty strings and ensure all columns are strings
-df['name'] = df['name'].fillna("").astype(str).str.lower().str.strip()
-df['description'] = df['description'].fillna("").astype(str).str.lower().str.strip()
-df['tags'] = df['tags'].fillna("").astype(str).str.lower().str.strip()
-df['ingredients'] = df['ingredients'].fillna("").astype(str).str.lower().str.strip()
-df['steps'] = df['steps'].fillna("").astype(str).str.lower().str.strip()
+    # Load only necessary columns and reduce memory usage
+    columns_needed = ['name', 'description', 'tags', 'ingredients', 'steps']
+    dataset_path = r'C:\Users\Jack\Desktop\foodRecipeAndInteractions\RAW_recipes_with_amount.csv'
 
-# Remove special characters from the 'description'
-df['description'] = df['description'].apply(lambda x: re.sub(r'[^\w\s]', '', x))
+    print("Loading dataset...")
+    df = pd.read_csv(dataset_path, encoding='ISO-8859-1', usecols=columns_needed)
+    print("Dataset loaded successfully!")
 
-# Function to clean text fields
-def clean_text(text):
-    text = text.replace("[", "").replace("]", "")  # Remove brackets
-    text = text.replace('"', "").replace("'", "")  # Remove quotes
-    text = text.strip()  # Remove leading/trailing spaces
-    return text
+    # Data Preprocessing and Cleaning
+    print("Preprocessing data...")
+    df['name'] = df['name'].fillna("").astype(str).str.lower().str.strip()
+    df['description'] = df['description'].fillna("").astype(str).str.lower().str.strip()
+    df['tags'] = df['tags'].fillna("").astype(str).str.lower().str.strip()
+    df['ingredients'] = df['ingredients'].fillna("").astype(str).str.lower().str.strip()
+    df['steps'] = df['steps'].fillna("").astype(str).str.lower().str.strip()
 
-# Apply cleaning to each column
-df['name'] = df['name'].apply(clean_text)
-df['description'] = df['description'].apply(clean_text)
-df['tags'] = df['tags'].apply(lambda x: [clean_text(tag) for tag in x.strip('[]').split(', ') if tag] if x else [])
-df['ingredients'] = df['ingredients'].apply(clean_text)
-df['steps'] = df['steps'].apply(clean_text)
+    df['description'] = df['description'].apply(lambda x: re.sub(r'[^\w\s]', '', x))
 
-# Remove duplicate recipes based on 'name' and 'description'
-df = df.drop_duplicates(subset=['name', 'description'])
+    def clean_text(text):
+        text = text.replace("[", "").replace("]", "").replace('"', "").replace("'", "").strip()
+        return text
 
-# Filter out recipes with too many steps or ingredients (outlier removal)
-df = df[df['steps'].apply(lambda x: len(x.split('.')) <= 20)]
-df = df[df['ingredients'].apply(lambda x: len(x.split(',')) <= 15)]
+    for column in ['name', 'description', 'tags', 'ingredients', 'steps']:
+        print(f"Cleaning column: {column}")
+        df[column] = df[column].progress_apply(clean_text)
 
-# Reformat 'ingredients' and 'steps' for consistency
-df['ingredients'] = df['ingredients'].apply(lambda x: ', '.join(x.split(',')))
-df['steps'] = df['steps'].apply(lambda x: '. '.join(x.split('.')))
+    print("Removing duplicates...")
+    df = df.drop_duplicates(subset=['name', 'description'])
 
-# Prepare the dataset for text generation
-with open("recipe_generation_dataset.txt", "w", encoding="utf-8") as f:
-    for _, row in df.iterrows():
-        prompt = f"Generate a recipe for {row['name']}."
-        recipe_text = f"Ingredients: {row['ingredients']}. Steps: {row['steps']}."
-        f.write(f"{prompt}\n{recipe_text}\n<|endoftext|>\n")
+    print("Filtering out recipes with too many steps...")
+    df = df[df['steps'].progress_apply(lambda x: len(x.split('.')) <= 20)]
 
-# Sample data without replacement to create pairs for similarity calculation
-sampled_indices = random.sample(range(len(df)), num_pairs * 2)  # Oversample to create more unique pairs
-sampled_df = df.iloc[sampled_indices]
+    print("Filtering out recipes with too many ingredients...")
+    df = df[df['ingredients'].progress_apply(lambda x: len(x.split(',')) <= 15)]
 
-# Generate unique pairs only and compute similarity
-similarity_pairs = []
+    df['ingredients'] = df['ingredients'].progress_apply(lambda x: ', '.join(x.split(',')))
+    df['steps'] = df['steps'].progress_apply(lambda x: '. '.join(x.split('.')))
+
+    return df, num_pairs
 
 def compute_similarity(row1, row2):
-    tags_a = set(row1['tags'])
-    tags_b = set(row2['tags'])
-    common_tags = tags_a & tags_b
-    if common_tags:
-        return len(common_tags) / len(tags_a | tags_b)
-    return 0
+    row1_name, row2_name = set(row1['name'].split()), set(row2['name'].split())
+    row1_desc, row2_desc = set(row1['description'].split()), set(row2['description'].split())
+    row1_tags, row2_tags = set(row1['tags']), set(row2['tags'])
+    row1_ing, row2_ing = set(row1['ingredients'].split(',')), set(row2['ingredients'].split(','))
 
-for i in range(0, len(sampled_df), 2):
-    if i + 1 >= len(sampled_df):
-        break
-    
-    recipe_a, recipe_b = sampled_df.iloc[i], sampled_df.iloc[i + 1]
-    similarity_score = compute_similarity(recipe_a, recipe_b)
-    
-    if similarity_score > 0:  # Only include pairs with some similarity
-        text_a = recipe_a['name'] + " " + recipe_a['description']
-        text_b = recipe_b['name'] + " " + recipe_b['description']
-        similarity_pairs.append({'text_a': text_a, 'text_b': text_b, 'score': similarity_score})
+    name_sim = len(row1_name & row2_name)
+    desc_sim = len(row1_desc & row2_desc)
+    tags_sim = len(row1_tags & row2_tags)
+    ingredients_sim = len(row1_ing & row2_ing)
 
-# Save the similarity pairs to a CSV file
-similarity_df = pd.DataFrame(similarity_pairs)
-similarity_df.to_csv("recipe_similarity_pairs.csv", index=False)
+    weight_name, weight_description, weight_tags, weight_ingredients = 3, 2, 2, 1
+    score = weight_name * name_sim + weight_description * desc_sim + weight_tags * tags_sim + weight_ingredients * ingredients_sim
+    return score / (weight_name + weight_description + weight_tags + weight_ingredients)
+
+def generate_pairs_for_chunk(args):
+    chunk_a, chunk_b = args
+    pairs = []
+    for _, recipe_a in chunk_a.iterrows():
+        for _, recipe_b in chunk_b.iterrows():
+            if recipe_a.name >= recipe_b.name:
+                continue
+            similarity_score = compute_similarity(recipe_a, recipe_b)
+            if similarity_score > 0:
+                text_a = f"{recipe_a['name']} {recipe_a['description']} Ingredients: {recipe_a['ingredients']}"
+                text_b = f"{recipe_b['name']} {recipe_b['description']} Ingredients: {recipe_b['ingredients']}"
+                pairs.append({'text_a': text_a, 'text_b': text_b, 'score': similarity_score})
+    return pairs
+
+def save_for_gpt2_format(df, output_file):
+    """Save recipes to a .txt file for GPT-2 text generation."""
+    print(f"Saving recipes for GPT-2 text generation to {output_file}...")
+    with open(output_file, 'w', encoding='utf-8') as f:
+        for _, row in df.iterrows():
+            f.write(f"Recipe Name: {row['name']}\n")
+            f.write(f"Description: {row['description']}\n")
+            f.write(f"Ingredients: {row['ingredients']}\n")
+            f.write(f"Steps: {row['steps']}\n\n")
+    print("Recipes saved successfully!")
+
+if __name__ == "__main__":
+    # Preprocess data
+    df, num_pairs = preprocess_and_save_data()
+
+    # Save data for GPT-2 text generation
+    gpt2_file = "recipe_generation_dataset.txt"
+    save_for_gpt2_format(df, gpt2_file)
+
+    print("Generating similarity pairs...")
+    sampled_df = df.sample(min(len(df), num_pairs * 2), random_state=42)
+
+    # Split data into chunks
+    batch_size = 1000
+    chunks = [sampled_df[i:i + batch_size] for i in range(0, len(sampled_df), batch_size)]
+    chunk_pairs = [(chunks[i], chunks[j]) for i in range(len(chunks)) for j in range(i, len(chunks))]
+
+    # Use multiprocessing
+    output_file = "recipe_similarity_pairs.csv"
+
+    if not os.path.exists(output_file):
+        pd.DataFrame(columns=['text_a', 'text_b', 'score']).to_csv(output_file, index=False)
+
+    print("Processing pairs with multiple cores...")
+    with Pool(processes=4) as pool:  # Utilize 4 cores
+        for i, result in enumerate(tqdm(pool.imap(generate_pairs_for_chunk, chunk_pairs), total=len(chunk_pairs))):
+            # Save the results every 10% of processing
+            pd.DataFrame(result).to_csv(output_file, mode='a', index=False, header=False)
+            print(f"Saved {i+1}/{len(chunk_pairs)} chunks to {output_file}")
