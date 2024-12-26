@@ -74,13 +74,41 @@ To get started with the project, follow these steps:
 3. Change the dataset path to here:
    - dataset_path = r'.\.\RAW_recipes_with_amount.csv'
 
-4. Run the "customer.py"
+4. Run the "chef.py"
 
 
 ### Project Structure
 
-1. **customer.py: Flask server containing all backend API endpoints.**
+1. **./backend/chef.py: Flask server containing the backend API endpoints.**
 
-2. **templates/: Frontend HTML files for the application.**
+2. **ui/: Frontend HTML files for the application.**
+   - **restaurantMenuGenerator.html: Main interface for recipe creation and random recipes.**
+   - **allRecipes.html: Interface for browsing and filtering all recipes.**
 
-3. **Ensure scalability and performance for handling large recipe datasets.**
+3. **fine-tuning/: Directory for storing fine tuned model.**
+
+### Usage
+1. **Search Recipes**:
+   - Enter keywords to find recipes based on name or description.
+   - View sorted results with similarity scores.
+
+2. **Random Recipes**:
+   - Select a category to explore randomly generated recipes.
+   - View and analyze recipe details interactively.
+
+3. **Create Recipes**:
+   - Provide a brief description of the recipe you want.
+   - The system generates all components, including ingredients and steps.
+
+4. **Explore All Recipes**:   
+   - Use filters and pagination to browse the recipe collection.
+
+   ### Future Enhancements
+1. Enable user authentication and personalized recipe saving.
+2. Integrate user feedback for improving AI-generated recipes.
+3. Expand recipe dataset for broader culinary diversity.
+4. Add a mobile-friendly version of the application.
+5. Implement to vercel.
+
+# Contributors
+   Jack Dong
