@@ -112,3 +112,26 @@ To get started with the project, follow these steps:
 
 # Contributors
    Jack Dong
+
+!Also include the "RAW_recipes_with_amount.csv" in this file!!
+
+
+Content in this file:
+1)backend:
+ - chef.py  -> backend for chef side, got a copy for pdf
+ - allRecipes.html -> > backend for chef side (show all recipe), got a copy for pdf
+2)gpt2-finetuned-recipes -> model which have already fine tuned (gpt2)
+3)fine-tuned-minilm-similarity -> model which have already fine tuned (sentences-transformer model (all-MiniLM-L6-v2))
+4)fine-tuning -> process for fine tuning, got a copy for pdf
+ - fine-tuned-dataset (include data cleaning & preprocessing) -> process for fine tuning dataset
+ - fine-tuned-gpt2-recipe -> process for fine tuning gpt2 model
+ - fine-tuned-sentences-transformer -> process for fine tuning sentences-transformer model (all-MiniLM-L6-v2)
+
+5) gpt2-finetuned-recipes -> model which have already fine tuned (gpt2)
+6) ui, got a copy for pdf:
+ - chefRecipeGenerator.html -> ui design for chef side
+
+7)recipe_generation_dataset.txt -> fine tuned dataset, used for gpt2
+8)recipe_similarity_pairs.csv -> fine tuned dataset, used for sentences-transformer model (all-MiniLM-L6-v2)
+
+
