@@ -238,21 +238,25 @@ def create_recipe():
 
     # Define the prompts dynamically using the user's description
     name_prompt = f"Generate a creative name for: {user_description}."
-    description_prompt = f"Describe this dish in detail: {user_description}."
-    ingredients_prompt = f"List the main ingredients for: {user_description}."
+    description_prompt = f"Describe this dish in detail as a complete sentence: {user_description}."
+    ingredients_prompt = f"List the main ingredients such as salt, sugar for {user_description}."
     steps_prompt = f"Provide step-by-step instructions for preparing: {user_description}."
 
     # Generate the recipe components
     name = pipe(name_prompt, max_length=30, num_return_sequences=1)[0]['generated_text'].strip()
     description = pipe(description_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].strip()
     steps = pipe(steps_prompt, max_length=150, num_return_sequences=1)[0]['generated_text'].split('. ')
-    ingredients = pipe(ingredients_prompt, max_length=100, num_return_sequences=1)[0]['generated_text'].split(', ')
+    
+    # Adjust the prompt to return the correct ingredients list
+    ingredients_response = pipe(ingredients_prompt, max_length=30, num_return_sequences=1)[0]['generated_text']
+    
+    # Clean and format the ingredients (no splitting into 3 words)
+    ingredients = [clean_text(ingredient.strip()) for ingredient in ingredients_response.split(',') if ingredient.strip()]
 
-    # Clean the generated data
+    # Clean other generated data
     name = clean_text(name)
     description = clean_text(description)
     steps = [clean_text(step) for step in steps if step.strip()]
-    ingredients = [clean_text(ingredient) for ingredient in ingredients if ingredient.strip()]
 
     # Enhance ingredients list with suitable additions
     additional_ingredients = get_suitable_ingredients(user_description)
@@ -281,44 +285,70 @@ def create_recipe():
 
     return jsonify(new_recipe)
 
-
 def get_suitable_ingredients(description):
     """Suggest additional ingredients based on the description."""
     additional_ingredients_map = {
-        # Indian Recipes
-        "spicy chicken curry": ["garam masala", "cumin", "turmeric", "coriander", "ginger", "chilies", "cardamom", "cloves", "bay leaves", "yogurt"],
+    # Indian Recipes
+    "spicy chicken curry": ["garam masala", "cumin", "turmeric", "coriander", "ginger", "chilies", "cardamom", "cloves", "bay leaves", "yogurt"],
+    
+    # Western Recipes
+    "pasta": ["parmesan cheese", "basil", "olive oil", "garlic", "oregano", "tomato paste", "black pepper", "cream", "spinach", "mushrooms"],
+    "spaghetti": ["parmesan cheese", "basil", "garlic", "olive oil", "tomato sauce", "oregano", "black pepper", "parmesan cheese"],
+    "salad": ["lettuce", "cucumber", "olive oil", "lemon juice", "feta cheese", "avocado", "cherry tomatoes", "red onions", "croutons", "balsamic vinegar"],
+    "soup": ["bay leaves", "thyme", "celery", "carrots", "parsley", "chicken broth", "cream", "leeks", "garlic", "potatoes"],
+    "steak": ["salt", "pepper", "garlic", "butter", "rosemary", "thyme", "onion powder", "paprika", "red wine", "mushrooms"],
+    "rib-eye steak": ["rib-eye steak", "olive oil", "garlic", "butter", "rosemary", "salt", "black pepper", "balsamic vinegar"],
+    "filet mignon": ["filet mignon", "butter", "garlic", "thyme", "salt", "pepper", "olive oil", "shallots"],
+    "burger": ["ground beef", "cheddar cheese", "lettuce", "tomatoes", "pickles", "ketchup", "mustard", "brioche buns", "onions", "bacon"],
+    "mac and cheese": ["elbow pasta", "cheddar cheese", "milk", "butter", "flour", "parmesan cheese", "breadcrumbs", "paprika", "garlic powder", "black pepper"],
+    "roast chicken": ["whole chicken", "butter", "thyme", "rosemary", "garlic", "lemon", "olive oil", "paprika", "onions", "carrots"],
+    "fried chicken": ["chicken pieces", "flour", "buttermilk", "paprika", "garlic powder", "onion powder", "salt", "pepper", "vegetable oil"],
+    "grilled chicken": ["chicken breast", "lemon", "garlic", "olive oil", "rosemary", "thyme", "paprika", "salt", "black pepper"],
+    "mashed potatoes": ["potatoes", "butter", "milk", "cream", "garlic", "parsley", "salt", "pepper", "chives", "cheddar cheese"],
+    "caesar salad": ["romaine lettuce", "parmesan cheese", "croutons", "caesar dressing", "olive oil", "anchovies", "garlic", "lemon juice", "black pepper", "mustard"],
+    "lasagna": ["lasagna sheets", "ground beef", "tomato sauce", "ricotta cheese", "mozzarella cheese", "parmesan cheese", "onions", "garlic", "basil", "oregano"],
+    "fish and chips": ["cod fish", "potatoes", "flour", "egg", "beer", "salt", "pepper", "lemon", "tartar sauce"],
+    "grilled salmon": ["salmon fillets", "olive oil", "lemon", "dill", "garlic", "butter", "salt", "pepper"],
+    "clam chowder": ["clams", "potatoes", "onions", "celery", "bacon", "cream", "butter", "flour", "salt", "thyme"],
+    "beef stroganoff": ["beef strips", "sour cream", "mushrooms", "onions", "garlic", "paprika", "flour", "beef broth", "egg noodles", "parsley"],
+    "shepherd's pie": ["ground lamb", "onions", "carrots", "peas", "potatoes", "butter", "cream", "thyme", "garlic", "cheddar cheese"],
+    "quiche": ["eggs", "cream", "cheddar cheese", "spinach", "bacon", "onions", "butter", "flour", "nutmeg", "black pepper"],
 
-        # Western Recipes
-        "pasta": ["parmesan cheese", "basil", "olive oil", "garlic", "oregano", "tomato paste", "black pepper", "cream", "spinach", "mushrooms"],
-        "salad": ["lettuce", "cucumber", "olive oil", "lemon juice", "feta cheese", "avocado", "cherry tomatoes", "red onions", "croutons", "balsamic vinegar"],
-        "soup": ["bay leaves", "thyme", "celery", "carrots", "parsley", "chicken broth", "cream", "leeks", "garlic", "potatoes"],
-        "steak": ["salt", "pepper", "garlic", "butter", "rosemary", "thyme", "onion powder", "paprika", "red wine", "mushrooms"],
-        "burger": ["ground beef", "cheddar cheese", "lettuce", "tomatoes", "pickles", "ketchup", "mustard", "brioche buns", "onions", "bacon"],
-        "mac and cheese": ["elbow pasta", "cheddar cheese", "milk", "butter", "flour", "parmesan cheese", "breadcrumbs", "paprika", "garlic powder", "black pepper"],
-        "roast chicken": ["whole chicken", "butter", "thyme", "rosemary", "garlic", "lemon", "olive oil", "paprika", "onions", "carrots"],
-        "mashed potatoes": ["potatoes", "butter", "milk", "cream", "garlic", "parsley", "salt", "pepper", "chives", "cheddar cheese"],
-        "caesar salad": ["romaine lettuce", "parmesan cheese", "croutons", "caesar dressing", "olive oil", "anchovies", "garlic", "lemon juice", "black pepper", "mustard"],
-        "lasagna": ["lasagna sheets", "ground beef", "tomato sauce", "ricotta cheese", "mozzarella cheese", "parmesan cheese", "onions", "garlic", "basil", "oregano"],
+    # Chinese Recipes
+    "fried rice": ["soy sauce", "eggs", "spring onions", "carrots", "peas", "garlic", "ginger", "sesame oil", "cooked rice", "chicken"],
+    "dumplings": ["ground pork", "ginger", "spring onions", "soy sauce", "sesame oil", "wonton wrappers", "cabbage", "garlic", "chili oil", "black vinegar"],
+    "hot and sour soup": ["tofu", "wood ear mushrooms", "bamboo shoots", "white pepper", "black vinegar", "egg", "soy sauce", "ginger", "chicken broth", "sesame oil"],
+    "sweet and sour pork": ["pork", "pineapple", "bell peppers", "soy sauce", "ketchup", "sugar", "white vinegar", "cornstarch", "garlic", "onions"],
+    "kung pao chicken": ["chicken breast", "peanuts", "dried chilies", "soy sauce", "hoisin sauce", "garlic", "ginger", "spring onions", "sesame oil", "cornstarch"],
+    "mapo tofu": ["tofu", "ground pork", "doubanjiang (chili bean paste)", "soy sauce", "ginger", "garlic", "spring onions", "Sichuan peppercorns", "sesame oil", "chicken broth"],
+    "beef chow mein": ["chow mein noodles", "beef strips", "soy sauce", "oyster sauce", "garlic", "ginger", "carrots", "cabbage", "spring onions", "sesame oil"],
+    "Peking duck": ["duck", "hoisin sauce", "cucumber", "spring onions", "mandarin pancakes", "garlic", "ginger", "soy sauce", "honey", "rice vinegar"],
+    "char siu pork": ["pork shoulder", "hoisin sauce", "soy sauce", "honey", "five-spice powder", "garlic", "ginger", "rice vinegar", "sesame oil", "sugar"],
+    "egg drop soup": ["chicken broth", "eggs", "cornstarch", "spring onions", "soy sauce", "ginger", "white pepper", "sesame oil", "salt", "water"],
+    "lo mein": ["lo mein noodles", "soy sauce", "oyster sauce", "ginger", "garlic", "carrots", "cabbage", "mushrooms", "spring onions", "sesame oil"],
+    "sesame chicken": ["chicken breast", "soy sauce", "cornstarch", "honey", "garlic", "ginger", "sesame oil", "sesame seeds", "vinegar", "sugar"],
+    "wonton soup": ["wonton wrappers", "ground pork", "spring onions", "soy sauce", "ginger", "sesame oil", "chicken broth", "spinach", "garlic", "water chestnuts"],
 
-        # Chinese Recipes
-        "fried rice": ["soy sauce", "eggs", "spring onions", "carrots", "peas", "garlic", "ginger", "sesame oil", "cooked rice", "chicken"],
-        "dumplings": ["ground pork", "ginger", "spring onions", "soy sauce", "sesame oil", "wonton wrappers", "cabbage", "garlic", "chili oil", "black vinegar"],
-        "hot and sour soup": ["tofu", "wood ear mushrooms", "bamboo shoots", "white pepper", "black vinegar", "egg", "soy sauce", "ginger", "chicken broth", "sesame oil"],
-        "sweet and sour pork": ["pork", "pineapple", "bell peppers", "soy sauce", "ketchup", "sugar", "white vinegar", "cornstarch", "garlic", "onions"],
-        "kung pao chicken": ["chicken breast", "peanuts", "dried chilies", "soy sauce", "hoisin sauce", "garlic", "ginger", "spring onions", "sesame oil", "cornstarch"],
-        "mapo tofu": ["tofu", "ground pork", "doubanjiang (chili bean paste)", "soy sauce", "ginger", "garlic", "spring onions", "Sichuan peppercorns", "sesame oil", "chicken broth"],
-        "beef chow mein": ["chow mein noodles", "beef strips", "soy sauce", "oyster sauce", "garlic", "ginger", "carrots", "cabbage", "spring onions", "sesame oil"],
-        "Peking duck": ["duck", "hoisin sauce", "cucumber", "spring onions", "mandarin pancakes", "garlic", "ginger", "soy sauce", "honey", "rice vinegar"],
-        "char siu pork": ["pork shoulder", "hoisin sauce", "soy sauce", "honey", "five-spice powder", "garlic", "ginger", "rice vinegar", "sesame oil", "sugar"],
-        "egg drop soup": ["chicken broth", "eggs", "cornstarch", "spring onions", "soy sauce", "ginger", "white pepper", "sesame oil", "salt", "water"],
-
-        # General Additions
-        "general": ["salt", "pepper", "water", "sugar", "flour", "butter", "vegetable oil"]
-    }
+    # Additional Recipes
+    "chicken": ["chicken breast", "garlic", "olive oil", "lemon", "rosemary", "thyme", "butter", "paprika", "onions", "potatoes"],
+    "duck": ["duck breast", "orange zest", "soy sauce", "hoisin sauce", "ginger", "garlic", "scallions", "hoisin sauce", "rice vinegar", "star anise"],
+    "lamb": ["ground lamb", "garlic", "rosemary", "olive oil", "mint", "yogurt", "cumin", "onions", "paprika", "coriander"],
+    "beef": ["ground beef", "onions", "garlic", "olive oil", "tomato paste", "parsley", "oregano", "pepper", "chili flakes", "paprika"],
+    "cow": ["beef steaks", "salt", "pepper", "butter", "garlic", "rosemary", "onion powder", "olive oil", "paprika", "mushrooms"],
+    "lamb chops": ["lamb chops", "garlic", "rosemary", "lemon", "olive oil", "thyme", "salt", "black pepper", "mint"],
+    "beef brisket": ["beef brisket", "brown sugar", "paprika", "garlic", "onion powder", "mustard powder", "black pepper", "salt", "bay leaves"],
+    "rack of lamb": ["rack of lamb", "garlic", "rosemary", "olive oil", "salt", "black pepper", "thyme", "lemon", "mustard"],
+    "beef wellington": ["beef tenderloin", "puff pastry", "mushrooms", "prosciutto", "egg yolk", "garlic", "onions", "butter", "parmesan"],
+    "grilled pork chops": ["pork chops", "garlic", "rosemary", "lemon", "olive oil", "black pepper", "salt", "thyme", "paprika"],
+    "grilled shrimp": ["shrimp", "olive oil", "garlic", "lemon", "parsley", "paprika", "salt", "black pepper", "cayenne"],
+    "chicken tikka masala": ["chicken breast", "garam masala", "yogurt", "garlic", "onions", "tomato paste", "cream", "cilantro", "cumin", "coriander"],
+    "beef fajitas": ["beef strips", "bell peppers", "onions", "garlic", "lime", "chili powder", "cumin", "olive oil", "flour tortillas", "jalapenos"]
+}
 
     # Match based on description keywords
+    description = description.lower()
     for key, additional_ingredients in additional_ingredients_map.items():
-        if key in description.lower():
+        if key in description:
             return additional_ingredients
 
     # Default suggestion if no specific match is found

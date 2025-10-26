@@ -427,10 +427,23 @@
         }
 
         function openPopup(recipeName, ingredients, steps) {
-            // Populate the popup with recipe details
-            document.getElementById('popupRecipeName').innerText = recipeName;
-            document.getElementById('popupRecipeIngredients').innerHTML = ingredients.map(item => `<li>${item}</li>`).join('');
-            document.getElementById('popupRecipeSteps').innerHTML = steps.map(item => `<li>${item}</li>`).join('');
+            // Clean the recipe name
+            const cleanRecipeName = recipeName.replace("Generate a creative name for: ", "").trim();
+
+            // Clean the ingredients
+            const cleanIngredients = ingredients.map(item =>
+                item.replace("List the main ingredients such as salt, sugar for: ", "").trim()
+            );
+
+            // Clean the steps
+            const cleanSteps = steps.map(item =>
+                item.replace("Provide step-by-step instructions for preparing: ", "").trim()
+            );
+
+            // Populate the popup with cleaned details
+            document.getElementById('popupRecipeName').innerText = cleanRecipeName;
+            document.getElementById('popupRecipeIngredients').innerHTML = cleanIngredients.map(item => `<li>${item}</li>`).join('');
+            document.getElementById('popupRecipeSteps').innerHTML = cleanSteps.map(item => `<li>${item}</li>`).join('');
 
             // Show the popup
             document.getElementById('recipePopup').style.display = 'flex';
@@ -496,8 +509,8 @@
                     // Clean up data to remove unwanted prefixes
                     const cleanData = {
                         name: data.name.replace("Generate a creative name for: ", "").split('.')[0].trim(), // Remove prefix and take text before first full stop
-                        description: data.description.replace("Describe this dish in detail: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
-                        ingredients: data.ingredients.replace("List the main ingredients for: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                        description: data.description.replace("Describe this dish in detail as a complete sentence: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
+                        ingredients: data.ingredients.replace("List the main ingredients such as salt, sugar for: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
                         steps: data.steps.replace("Provide step-by-step instructions for preparing: ", "").split('.').slice(1).join('.').trim(), // Remove prefix and take text after first full stop
                     };
 
