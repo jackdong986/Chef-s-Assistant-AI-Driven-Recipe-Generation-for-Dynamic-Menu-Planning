@@ -1,137 +1,138 @@
-# Chef’s Assistant: AI-Driven Recipe Generation for Dynamic Menu Planning
+# Chef's Assistant: AI-Driven Recipe Generation for Dynamic Menu Planning
 
-## Project Description
+Chef's Assistant is a local Gradio application for searching, browsing, generating,
+and planning recipes. It keeps the original project objectives while replacing the
+old GPT-2 plus SentenceTransformer setup with one Llama 3.2 3B Instruct model.
 
-The Chef's Recipe Generator is a web-based application that leverages AI to provide chefs, home cooks, and food enthusiasts with an intuitive platform for exploring, searching, and creating recipes. It integrates natural language processing and machine learning models to deliver personalized recipe recommendations, dynamic menu generation, and easy-to-use features for creativity in the kitchen.
+The recipe CSV supplies factual recipe records. The single Llama model reranks
+search results, creates custom recipes, and selects recipes for menu plans. A LoRA
+adapter fine-tuned on the supplied dataset improves recipe structure while a second
+audit pass through the same loaded model enforces cuisine, dietary, ingredient, and
+step consistency.
 
-### Key Features
+## Features
 
-1. **Search for Recipes**: 
-   - Search recipes using a text-based query with AI-powered similarity scoring..
-   - Provides detailed information, including ingredients, steps, and descriptions.
+- AI recipe search with dataset candidate filtering and Llama relevance ranking.
+- Random recipe discovery for all, Chinese, or Western recipes.
+- Alphabetical and category-based recipe browsing with pagination.
+- Custom recipe generation with servings and dietary requirements.
+- Dynamic menu planning by days, meals, budget, dietary needs, cuisine, and
+  available ingredients, including a consolidated shopping list.
+- A temporary local Gradio web interface with lazy model loading.
 
-2. **Random Recipe Generator**:
-   - Generate random recipes from specific categories (e.g., Chinese, Western)
-   - Explore new and diverse culinary ideas
+## Current local configuration
 
-3. **Custom Recipe Creator**:
-   - Describe a dish in your words, and the system generates a name, ingredients, and step-by-step instructions.
-   - Automatically suggests complementary ingredients for better results.
+This checkout is configured for the following local resources:
 
-4. **All Recipes Viewer**:
-   - Filter recipes by alphabetical order or category.
-   - Supports pagination for easy navigation.
+- Dataset: `C:\Users\Jack\Downloads\RAW_recipes_with_amount.csv`
+- Base model: `C:\Users\Jack\Downloads\aistackphison\aistackphison\Llama-3.2-3B-Instruct`
+- Fine-tuned LoRA adapter: `models\chef-llama-3.2-3b-lora`
+- Default server: `http://127.0.0.1:7860`
 
-5. **User-Friendly Interface**:
-   - Intuitive design with categorized sections for search, random generation, and recipe creation.
-   - Real-time recipe previews and editing options.
+These paths can be changed with the environment variables documented in
+`.env.example`. The CSV, model files, virtual environment, caches, checkpoints, and
+logs are excluded by `.gitignore` and should not be pushed to GitHub.
 
-### Objectives
+## Setup on Windows
 
-1. **Provide a comprehensive recipe management system for personal and professional use.**
+From PowerShell in the repository directory:
 
-2. **Utilize NLP and ML models to enhance the relevance and creativity of recipe suggestions.**
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements-torch-cuda.txt
+.\.venv\Scripts\python.exe -m pip install -r requirements-gradio.txt
+```
 
-3. **Ensure scalability and performance for handling large recipe datasets.**
+The current machine already has this `.venv` configured with a CUDA-enabled PyTorch
+build. A compatible NVIDIA GPU is strongly recommended; CPU generation with a 3B
+model will be slow.
 
-## Tools and Technologies:
+## Run the Gradio server
 
-1. Programming Languages: 
-   - Python (Backend)
-   - HTML, CSS, and JavaScript (Frontend)
-2. Frameworks and Libraries: 
-   - Flask (Web Framework)
-   - PyTorch (Deep Learning)
-   - SentenceTransformers and Hugging Face Transformers (NLP Models)
-   - Pandas (Data Processing)
-3. Development Tools: 
-   - Visual Studio Code
-   - Jupyter Notebook
-4. Models Used:
-   - Hugging Face (get the pre-trained model to fine-tuned)
-      - Fine-tuned GPT-2 for text generation
-      - Fine-tuned MiniLM for similarity scoring
+For start, stop, restart, health-check, and port-recovery instructions, see
+[`SERVER_GUIDE.md`](SERVER_GUIDE.md).
 
-### Getting Started
+Start the local-only server:
 
-To get started with the project, follow these steps:
+```powershell
+.\run_gradio.ps1
+```
 
-1. Clone the repository:
-   ```sh
-   https://github.com/jackdong986/ResMenuFYP.git
+Then open `http://127.0.0.1:7860`. The application loads the CSV when a dataset
+feature is first used and loads the Llama model when an AI feature is first used.
 
-2. Download the Dataset fromm Kaggle (without amount column):
-   ```sh
-   https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions/data
+To create a temporary public Gradio URL, run:
 
-   ```
-   or
-   With amount column:
-   ```sh
-   https://drive.google.com/file/d/1GnGDxejJjNbnhYn0Gm6v7S9IOKetM4vX/view?usp=sharing
-   ```
+```powershell
+.\run_gradio.ps1 --share
+```
 
-3. Change the dataset path to here:
-   - dataset_path = r'.\.\RAW_recipes_with_amount.csv'
+Only use `--share` when public access is intended. Do not expose private data or an
+unattended model server.
 
-4. Run the "chef.py"
+The legacy command remains available as a compatibility entry point:
 
+```powershell
+.\.venv\Scripts\python.exe .\backend\chef.py
+```
 
-### Project Structure
+## Fine-tuning the single model
 
-1. **./backend/chef.py: Flask server containing the backend API endpoints.**
+The active training pipeline is `fine-tuning\fine_tune_single_model.py`. It selects
+a stratified sample so less common cuisine and dietary labels are represented, then
+LoRA fine-tunes the local Llama checkpoint.
 
-2. **ui/: Frontend HTML files for the application.**
-   - **restaurantMenuGenerator.html: Main interface for recipe creation and random recipes.**
-   - **allRecipes.html: Interface for browsing and filtering all recipes.**
+Example:
 
-3. **fine-tuning/: Directory for storing fine tuned model.**
+```powershell
+.\.venv\Scripts\python.exe .\fine-tuning\fine_tune_single_model.py `
+  --dataset "C:\Users\Jack\Downloads\RAW_recipes_with_amount.csv" `
+  --base-model "C:\Users\Jack\Downloads\aistackphison\aistackphison\Llama-3.2-3B-Instruct" `
+  --max-rows 10000 `
+  --epochs 2
+```
 
-### Usage
-1. **Search Recipes**:
-   - Enter keywords to find recipes based on name or description.
-   - View sorted results with similarity scores.
+Training output is saved under the Git-ignored `models\` directory. The application
+currently uses the adapter at scale `0.5`, which can be changed with
+`RECIPE_LORA_SCALE`.
 
-2. **Random Recipes**:
-   - Select a category to explore randomly generated recipes.
-   - View and analyze recipe details interactively.
+The CSV's `amount` field is not used as an ingredient quantity because it contains
+one scalar per recipe rather than an amount for each ingredient. Generated recipes
+receive explicit ingredient quantities during the model audit pass.
 
-3. **Create Recipes**:
-   - Provide a brief description of the recipe you want.
-   - The system generates all components, including ingredients and steps.
+## Project structure
 
-4. **Explore All Recipes**:   
-   - Use filters and pagination to browse the recipe collection.
+```text
+gradio_app.py                         Active Gradio application
+run_gradio.ps1                        Windows launcher
+backend/chef.py                       Compatibility launcher
+fine-tuning/fine_tune_single_model.py Single-model LoRA training
+fine-tuning/evaluate_adapter.py       Adapter-strength evaluation
+ui/                                   Original HTML interface retained for reference
+models/                               Local outputs; ignored by Git
+```
 
-   ### Future Enhancements
-1. Enable user authentication and personalized recipe saving.
-2. Integrate user feedback for improving AI-generated recipes.
-3. Expand recipe dataset for broader culinary diversity.
-4. Add a mobile-friendly version of the application.
-5. Implement to vercel.
+## Accuracy and safety notes
 
-# Contributors
-   Jack Dong
+- Search and menu planning ground results in the dataset instead of asking the
+  language model to invent every record.
+- Mandatory cuisine and dietary terms are checked before results are shown. If the
+  sampled dataset does not contain enough exact matches, the menu planner reports
+  that honestly rather than silently weakening the constraints.
+- Generated recipes still require human review. Verify allergens, halal status,
+  cooking temperatures, food safety, nutrition, and local prices before use.
 
-!Also include the "RAW_recipes_with_amount.csv" in this file!!
+## Possible next improvements
 
+- Add a held-out evaluation set with cuisine accuracy, dietary violation rate,
+  ingredient-step consistency, and human taste ratings.
+- Add persistent user accounts, favorites, feedback, and saved menu plans.
+- Index the full CSV in a lightweight database for faster and more complete search.
+- Add ingredient substitution and nutrition data from verified sources.
+- Containerize the application and add automated tests and GitHub Actions.
+- Build a mobile-friendly production UI after the model workflow is stable.
 
-Content in this file:
-1)backend:
- - chef.py  -> backend for chef side, got a copy for pdf
- - allRecipes.html -> > backend for chef side (show all recipe), got a copy for pdf
-2)gpt2-finetuned-recipes -> model which have already fine tuned (gpt2)
-3)fine-tuned-minilm-similarity -> model which have already fine tuned (sentences-transformer model (all-MiniLM-L6-v2))
-4)fine-tuning -> process for fine tuning, got a copy for pdf
- - fine-tuned-dataset (include data cleaning & preprocessing) -> process for fine tuning dataset
- - fine-tuned-gpt2-recipe -> process for fine tuning gpt2 model
- - fine-tuned-sentences-transformer -> process for fine tuning sentences-transformer model (all-MiniLM-L6-v2)
+## Contributor
 
-5) gpt2-finetuned-recipes -> model which have already fine tuned (gpt2)
-6) ui, got a copy for pdf:
- - chefRecipeGenerator.html -> ui design for chef side
-
-7)recipe_generation_dataset.txt -> fine tuned dataset, used for gpt2
-8)recipe_similarity_pairs.csv -> fine tuned dataset, used for sentences-transformer model (all-MiniLM-L6-v2)
-
-
+Jack Dong

@@ -4,3 +4,13 @@ fine-tuned-minilm-similarity
 gpt2-finetuned-recipes
 fine-tuned-gpt2-recipe
 checkpoints
+models/
+.venv/
+.env
+.cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+flagged/
+gradio_cached_examples/
+*.log
