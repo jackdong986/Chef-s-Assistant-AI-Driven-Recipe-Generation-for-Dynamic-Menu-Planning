@@ -18,9 +18,11 @@ Keep that PowerShell window open. When startup finishes, open:
 
 <http://127.0.0.1:7860>
 
-The dataset is loaded when a dataset feature is first used. The Llama model is
-loaded into GPU memory when an AI feature is first used, so the first AI request
-will take longer than later requests.
+The complete recipe index is opened when a dataset feature is first used. If the
+index does not exist yet, the application builds it automatically from the CSV;
+this one-time first run takes longer. The Llama model is loaded into GPU memory when
+an AI feature is first used, so the first AI request also takes longer than later
+requests.
 
 If PowerShell blocks local scripts because of its execution policy, use:
 

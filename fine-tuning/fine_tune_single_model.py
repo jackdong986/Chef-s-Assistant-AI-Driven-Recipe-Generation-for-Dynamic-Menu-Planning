@@ -181,9 +181,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max-steps", type=int, default=-1)
     parser.add_argument(
-        "--skip-merge",
+        "--merge",
         action="store_true",
-        help="Save only the LoRA adapter; useful for a short benchmark run.",
+        help="Also create a full merged checkpoint. The application only needs the adapter.",
     )
     return parser.parse_args()
 
@@ -279,7 +279,7 @@ def main() -> None:
     trainer.model.save_pretrained(args.adapter_output, safe_serialization=True)
     tokenizer.save_pretrained(args.adapter_output)
 
-    if args.skip_merge:
+    if not args.merge:
         print(f"LoRA adapter saved to {args.adapter_output}")
         return
 

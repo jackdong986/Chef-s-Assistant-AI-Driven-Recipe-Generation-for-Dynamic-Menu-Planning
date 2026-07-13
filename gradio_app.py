@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import argparse
 import ast
+import csv
 import html
 import json
 import os
-import random
 import re
+import uuid
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -18,8 +19,9 @@ DEFAULT_DATASET_PATH = Path.home() / "Downloads" / "RAW_recipes_with_amount.csv"
 DEFAULT_BASE_MODEL_PATH = Path(
     r"C:\Users\Jack\Downloads\aistackphison\aistackphison\Llama-3.2-3B-Instruct"
 )
-DEFAULT_FINETUNED_MODEL_PATH = PROJECT_ROOT / "models" / "chef-llama-3.2-3b"
 DEFAULT_ADAPTER_PATH = PROJECT_ROOT / "models" / "chef-llama-3.2-3b-lora"
+DEFAULT_INDEX_PATH = PROJECT_ROOT / ".cache" / "recipes.sqlite3"
+EXPORT_DIR = PROJECT_ROOT / ".cache" / "exports"
 
 # Keep downloaded Hugging Face models with this checkout. The directory is ignored by Git.
 os.environ.setdefault("HF_HOME", str(PROJECT_ROOT / ".cache" / "huggingface"))
@@ -31,37 +33,21 @@ import torch
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from recipe_quality import (
+    QualityIssue,
+    find_blocked_terms,
+    normalize_recipe,
+    quality_score,
+    validate_recipe,
+)
+from recipe_store import RecipeStore
+
 DATASET_PATH = Path(os.getenv("RECIPE_DATASET_PATH", str(DEFAULT_DATASET_PATH))).expanduser()
-MAX_ROWS = max(1000, int(os.getenv("RECIPE_MAX_ROWS", "100000")))
+INDEX_PATH = Path(os.getenv("RECIPE_INDEX_PATH", str(DEFAULT_INDEX_PATH))).expanduser()
 GENERATION_MODEL = os.getenv("RECIPE_GENERATION_MODEL", "").strip()
 BASE_MODEL = os.getenv("RECIPE_BASE_MODEL", str(DEFAULT_BASE_MODEL_PATH))
 LORA_ADAPTER = os.getenv("RECIPE_LORA_ADAPTER", str(DEFAULT_ADAPTER_PATH))
 LORA_SCALE = float(os.getenv("RECIPE_LORA_SCALE", "0.5"))
-
-CHINESE_KEYWORDS = (
-    "baozi",
-    "char siu",
-    "chow mein",
-    "dim sum",
-    "dumpling",
-    "fried rice",
-    "kung pao",
-    "mapo tofu",
-    "peking duck",
-    "szechuan",
-    "wonton",
-)
-WESTERN_KEYWORDS = (
-    "burger",
-    "caesar salad",
-    "fish and chips",
-    "lasagna",
-    "pasta",
-    "pizza",
-    "roast",
-    "sandwich",
-    "steak",
-)
 
 
 def _safe_text(value: Any) -> str:
@@ -84,34 +70,8 @@ def _parse_list(value: Any) -> list[str]:
 
 
 @lru_cache(maxsize=1)
-def load_recipes() -> pd.DataFrame:
-    if not DATASET_PATH.is_file():
-        raise FileNotFoundError(
-            f"Dataset not found at {DATASET_PATH}. Set RECIPE_DATASET_PATH to the CSV file."
-        )
-
-    columns = ["name", "description", "ingredients", "steps", "tags", "minutes"]
-    frame = pd.read_csv(
-        DATASET_PATH,
-        usecols=columns,
-        encoding="ISO-8859-1",
-        low_memory=False,
-    )
-    frame = frame.dropna(subset=["name"]).copy()
-    for column in ("name", "description", "ingredients", "steps", "tags"):
-        frame[column] = frame[column].fillna("").astype(str)
-    frame = frame.drop_duplicates(subset=["name", "description"])
-    if len(frame) > MAX_ROWS:
-        frame = frame.sample(n=MAX_ROWS, random_state=42)
-
-    frame["search_text"] = (
-        frame["name"]
-        + ". "
-        + frame["description"]
-        + ". Ingredients: "
-        + frame["ingredients"]
-    ).str.slice(0, 1200)
-    return frame.reset_index(drop=True)
+def get_recipe_store() -> RecipeStore:
+    return RecipeStore(DATASET_PATH, INDEX_PATH)
 
 
 @lru_cache(maxsize=1)
@@ -242,11 +202,20 @@ def _rank_recipes(
     query: str,
     count: int,
     source_frame: pd.DataFrame | None = None,
+    max_minutes: int | None = None,
 ) -> tuple[pd.DataFrame, np.ndarray]:
-    frame = source_frame.copy() if source_frame is not None else load_recipes()
+    frame = (
+        source_frame.copy()
+        if source_frame is not None
+        else get_recipe_store().search(
+            query,
+            limit=max(100, count * 5),
+            max_minutes=max_minutes,
+        )
+    )
     normalized_query = query.lower().strip()
     tokens = _query_tokens(normalized_query)
-    if not tokens:
+    if not tokens or frame.empty:
         return frame.iloc[0:0], np.array([], dtype=float)
 
     names = frame["name"].str.lower()
@@ -270,28 +239,46 @@ def _rank_recipes(
     return frame.iloc[ordered], scores[ordered]
 
 
-def ai_search(query: str, result_count: int) -> str:
+def ai_search(
+    query: str,
+    result_count: int,
+    dietary_notes: str = "",
+    max_minutes: int = 0,
+) -> str:
     query = _safe_text(query)
     if not query:
         return "Enter a dish, ingredient, cuisine, or description to search."
 
     try:
         count = min(max(int(result_count), 1), 10)
+        notes = _safe_text(dietary_notes)
         requested_cuisines = _requested_cuisines(query)
-        source_frame = None
+        source_frame = get_recipe_store().search(
+            query,
+            limit=max(100, count * 15),
+            max_minutes=int(max_minutes or 0),
+        )
         if requested_cuisines:
-            frame = load_recipes()
-            cuisine_mask = pd.Series(True, index=frame.index)
+            cuisine_mask = pd.Series(True, index=source_frame.index)
             for cuisine in requested_cuisines:
-                cuisine_mask &= frame["search_text"].str.contains(
+                cuisine_mask &= source_frame["search_text"].str.contains(
                     cuisine, case=False, regex=False
                 )
-            source_frame = frame[cuisine_mask]
+            source_frame = source_frame[cuisine_mask]
+        if notes:
+            source_frame = source_frame[
+                source_frame.apply(
+                    lambda row: _matches_dietary_notes(row, notes), axis=1
+                )
+            ]
         candidates, lexical_scores = _rank_recipes(
-            query, max(20, count), source_frame=source_frame
+            query,
+            max(20, count),
+            source_frame=source_frame,
+            max_minutes=int(max_minutes or 0),
         )
         if candidates.empty:
-            return "No matching recipe was found in the loaded dataset sample."
+            return "No recipe in the complete catalog matches every selected filter."
 
         candidates = candidates.reset_index(drop=True)
         candidate_lines = []
@@ -339,40 +326,12 @@ def ai_search(query: str, result_count: int) -> str:
 
 def random_recipe(category: str) -> str:
     try:
-        frame = load_recipes()
-        if category != "All":
-            keywords = CHINESE_KEYWORDS if category == "Chinese" else WESTERN_KEYWORDS
-            candidates = frame[
-                frame["search_text"].str.lower().apply(
-                    lambda text: any(keyword in text for keyword in keywords)
-                )
-            ]
-        else:
-            candidates = frame
-
-        if candidates.empty:
-            return f"No {category.lower()} recipe was found in the loaded sample."
-        return _recipe_markdown(candidates.iloc[random.randrange(len(candidates))])
+        recipe = get_recipe_store().random_recipe(category)
+        if recipe is None:
+            return f"No {category.lower()} recipe was found in the catalog."
+        return _recipe_markdown(recipe)
     except Exception as exc:
         return f"### Random recipe unavailable\n\n{html.escape(str(exc))}"
-
-
-def _blocked_dietary_terms(dietary_notes: str) -> set[str]:
-    notes = dietary_notes.lower()
-    blocked_terms: set[str] = set()
-    if "halal" in notes:
-        blocked_terms.update({"pork", "bacon", "ham", "lard", "wine", "beer", "brandy", "rum"})
-    if "vegetarian" in notes:
-        blocked_terms.update({"beef", "chicken", "duck", "fish", "lamb", "pork", "shrimp", "turkey"})
-    if "vegan" in notes:
-        blocked_terms.update(
-            {"beef", "butter", "cheese", "chicken", "cream", "egg", "fish", "honey", "lamb", "milk", "pork", "shrimp"}
-        )
-    if "no peanut" in notes or "peanut allergy" in notes:
-        blocked_terms.update({"peanut", "groundnut"})
-    if "gluten-free" in notes or "gluten free" in notes:
-        blocked_terms.update({"barley", "bread", "flour", "pasta", "rye", "wheat"})
-    return blocked_terms
 
 
 def _matches_dietary_notes(row: pd.Series, dietary_notes: str) -> bool:
@@ -380,8 +339,7 @@ def _matches_dietary_notes(row: pd.Series, dietary_notes: str) -> bool:
         _safe_text(row.get(column))
         for column in ("name", "description", "tags", "ingredients", "steps")
     ).lower()
-    blocked_terms = _blocked_dietary_terms(dietary_notes)
-    return not any(term in recipe_text for term in blocked_terms)
+    return not find_blocked_terms(recipe_text, dietary_notes)
 
 
 def _requested_cuisines(description: str) -> list[str]:
@@ -407,25 +365,6 @@ def _parse_recipe_json(text: str) -> dict[str, Any] | None:
     return None
 
 
-def _needs_recipe_correction(
-    recipe: dict[str, Any] | None,
-    cuisines: list[str],
-    dietary_notes: str,
-) -> bool:
-    if not recipe:
-        return True
-    if not isinstance(recipe.get("ingredients"), list) or not isinstance(recipe.get("steps"), list):
-        return True
-    name = _safe_text(recipe.get("name"))
-    identity = f"{name} {_safe_text(recipe.get('description'))}".lower()
-    if cuisines and (
-        any(cuisine not in identity for cuisine in cuisines) or len(name.split()) < 2
-    ):
-        return True
-    complete_recipe = json.dumps(recipe, ensure_ascii=False).lower()
-    return any(term in complete_recipe for term in _blocked_dietary_terms(dietary_notes))
-
-
 def _deduplicate(items: Any) -> list[str]:
     if not isinstance(items, list):
         return []
@@ -440,70 +379,48 @@ def _deduplicate(items: Any) -> list[str]:
     return result
 
 
-def _normalize_generated_lists(recipe: dict[str, Any]) -> tuple[list[str], list[str]]:
-    ingredients: list[str] = []
-    ingredient_names: set[str] = set()
-    for item in recipe.get("ingredients", []):
-        if isinstance(item, dict):
-            name = _safe_text(item.get("name"))
-            quantity = _safe_text(item.get("quantity"))
-            unit = _safe_text(item.get("unit"))
-            if name:
-                ingredient_names.add(name.lower())
-            detail = unit if unit and name.lower() in unit.lower() else " ".join(
-                part for part in (unit, name) if part
-            )
-            ingredients.append(" ".join(part for part in (quantity, detail) if part))
-        else:
-            ingredients.append(_safe_text(item))
-
-    steps: list[str] = []
-    declared_in_steps: set[str] = set()
-    for item in recipe.get("steps", []):
-        if isinstance(item, dict):
-            steps.append(_safe_text(item.get("step") or item.get("instruction")))
-            declared = item.get("ingredients", [])
-            if isinstance(declared, list):
-                declared_in_steps.update(_safe_text(value).lower() for value in declared)
-        else:
-            steps.append(_safe_text(item))
-
-    for missing_name in sorted(declared_in_steps - ingredient_names):
-        if missing_name:
-            ingredients.append(f"as needed {missing_name}")
-    return _deduplicate(ingredients)[:30], _deduplicate(steps)[:25]
-
-
-def _render_generated_recipe(text: str) -> str:
-    recipe = _parse_recipe_json(text)
-    if recipe:
-        try:
-            ingredients, steps = _normalize_generated_lists(recipe)
-            lines = [
-                f"## {html.escape(_safe_text(recipe.get('name')) or 'Generated recipe')}",
-                "",
-                html.escape(_safe_text(recipe.get("description"))),
-                "",
-                f"Preparation time: **{html.escape(_safe_text(recipe.get('minutes')))} minutes**",
-                "",
-                "**Ingredients**",
-            ]
-            lines.extend(f"- {html.escape(_safe_text(item))}" for item in ingredients)
-            lines.extend(["", "**Steps**"])
-            lines.extend(
-                f"{index}. {html.escape(_safe_text(step))}"
-                for index, step in enumerate(steps, 1)
-            )
-            return "\n".join(lines)
-        except TypeError:
-            pass
-    return f"## Generated recipe\n\n{html.escape(text)}"
+def _render_generated_recipe(
+    recipe: dict[str, Any],
+    issues: list[QualityIssue],
+    *,
+    audited: bool,
+) -> str:
+    ingredients = _deduplicate(recipe.get("ingredients", []))[:30]
+    steps = _deduplicate(recipe.get("steps", []))[:25]
+    score = quality_score(issues)
+    status = "AI audit applied" if audited else "Draft passed deterministic checks"
+    lines = [
+        f"## {html.escape(_safe_text(recipe.get('name')) or 'Generated recipe')}",
+        "",
+        f"**Quality score: {score}/100** · {status}",
+        "",
+        html.escape(_safe_text(recipe.get("description"))),
+        "",
+        f"**Servings:** {html.escape(_safe_text(recipe.get('servings')))} · "
+        f"**Total time:** {html.escape(_safe_text(recipe.get('minutes')))} minutes",
+        "",
+        "### Ingredients",
+    ]
+    lines.extend(f"- {html.escape(_safe_text(item))}" for item in ingredients)
+    lines.extend(["", "### Method"])
+    lines.extend(
+        f"{index}. {html.escape(_safe_text(step))}"
+        for index, step in enumerate(steps, 1)
+    )
+    if issues:
+        lines.extend(["", "### Chef review notes"])
+        lines.extend(f"- {html.escape(issue.message)}" for issue in issues)
+    return "\n".join(lines)
 
 
-def generate_recipe(description: str, servings: int, dietary_notes: str) -> str:
+def generate_recipe_record(
+    description: str,
+    servings: int,
+    dietary_notes: str,
+) -> tuple[dict[str, Any], list[QualityIssue], bool]:
     description = _safe_text(description)
     if not description:
-        return "Describe the recipe you want to generate."
+        raise ValueError("Describe the recipe you want to generate.")
 
     notes = _safe_text(dietary_notes) or "none"
     requested_cuisines = _requested_cuisines(description)
@@ -526,7 +443,8 @@ def generate_recipe(description: str, servings: int, dietary_notes: str) -> str:
         "The requested cuisine, dish style, and dietary requirements are mandatory and must never "
         "be replaced by a different cuisine. Use sensible ingredient quantities and provide safe, "
         "ordered cooking instructions. Return only valid JSON with the keys name, description, "
-        "minutes, ingredients, and steps. Ingredients and steps must be JSON arrays of strings."
+        "servings, minutes, ingredients, and steps. Ingredients and steps must be JSON arrays of "
+        "strings, and every ingredient string must begin with a practical quantity."
     )
     cuisine_requirement = (
         "The JSON name must be a meaningful dish name containing "
@@ -542,80 +460,302 @@ def generate_recipe(description: str, servings: int, dietary_notes: str) -> str:
         f"{' '.join(reference_text)}"
     )
 
-    try:
-        recipe = _generate_with_model(
-            system_message,
-            user_message,
-            max_new_tokens=600,
-            temperature=0.25,
-        )
-        if not recipe:
-            return "The model returned an empty recipe. Try a more specific description."
-        parsed_recipe = _parse_recipe_json(recipe)
-        correction_reason = (
-            "The draft failed a mandatory format, cuisine, or dietary check. "
-            if _needs_recipe_correction(parsed_recipe, requested_cuisines, notes)
-            else "Audit the draft for accuracy and internal consistency. "
-        )
+    draft_text = _generate_with_model(
+        system_message,
+        user_message,
+        max_new_tokens=650,
+        temperature=0.25,
+    )
+    if not draft_text:
+        raise ValueError("The model returned an empty recipe. Try a more specific description.")
+    draft = normalize_recipe(_parse_recipe_json(draft_text))
+    issues = validate_recipe(
+        draft,
+        cuisines=requested_cuisines,
+        dietary_notes=notes,
+        servings=int(servings),
+    )
+    audited = False
+    final_recipe = draft
+    if issues:
+        audited = True
+        issue_summary = " ".join(issue.message for issue in issues)
         correction_message = (
-            f"{correction_reason}Original request: {description}. Servings: {int(servings)}. "
+            f"The deterministic checks found these problems: {issue_summary} "
+            f"Original request: {description}. Servings: {int(servings)}. "
             f"Mandatory dietary requirements: {notes}. "
             f"Mandatory cuisines: {', '.join(requested_cuisines) or 'none specified'}. "
             "Correct the draft while preserving the request. Use a meaningful dish name. Every "
             "ingredient must have a practical quantity, every ingredient mentioned in the steps "
             "must appear in the ingredient list, and every main ingredient must be used in the "
             "steps. Do not switch between rice, noodles, pasta, or another starch. Remove duplicate "
-            "and unused ingredients. Return only valid JSON with name, description, minutes, "
-            f"ingredients, and steps. Draft: {recipe}"
+            "and unused ingredients. Return only valid JSON with name, description, servings, "
+            f"minutes, ingredients, and steps. Draft: {draft_text}"
         )
-        recipe = _generate_with_model(
+        corrected_text = _generate_with_model(
             system_message,
             correction_message,
             max_new_tokens=700,
             temperature=0.1,
             adapter_multiplier=0.0,
         )
+        corrected = normalize_recipe(_parse_recipe_json(corrected_text))
+        if corrected:
+            final_recipe = corrected
+    final_issues = validate_recipe(
+        final_recipe,
+        cuisines=requested_cuisines,
+        dietary_notes=notes,
+        servings=int(servings),
+    )
+    return final_recipe, final_issues, audited
+
+
+def generate_recipe(description: str, servings: int, dietary_notes: str) -> str:
+    try:
+        recipe, issues, audited = generate_recipe_record(
+            description, servings, dietary_notes
+        )
         return (
-            f"{_render_generated_recipe(recipe)}\n\n"
+            f"{_render_generated_recipe(recipe, issues, audited=audited)}\n\n"
             "> AI-generated recipe: verify allergens, food safety, and cooking temperatures before use."
         )
     except Exception as exc:
         return f"### Generation unavailable\n\n{html.escape(str(exc))}"
 
 
-def _category_mask(frame: pd.DataFrame, category: str) -> pd.Series:
-    if category == "All":
-        return pd.Series(True, index=frame.index)
-    keywords = CHINESE_KEYWORDS if category == "Chinese" else WESTERN_KEYWORDS
-    return frame["search_text"].str.lower().apply(
-        lambda text: any(keyword in text for keyword in keywords)
-    )
+def _write_export(prefix: str, suffix: str, content: str) -> str:
+    EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+    path = EXPORT_DIR / f"{prefix}-{uuid.uuid4().hex[:8]}{suffix}"
+    path.write_text(content, encoding="utf-8")
+    return str(path)
+
+
+def generate_recipe_ui(
+    description: str,
+    servings: int,
+    dietary_notes: str,
+) -> tuple[str, str | None]:
+    result = generate_recipe(description, servings, dietary_notes)
+    if result.startswith("### Generation unavailable") or not _safe_text(description):
+        return result, None
+    return result, _write_export("recipe", ".md", result)
 
 
 def browse_recipes(letter: str, category: str, page: int) -> tuple[str, str]:
     try:
-        frame = load_recipes()
-        mask = _category_mask(frame, category)
-        if letter != "All":
-            cleaned_names = frame["name"].str.lower().str.replace(
-                r"^(?:\d+\s*|the\s+|in\s+)", "", regex=True
-            )
-            mask &= cleaned_names.str.startswith(letter.lower())
-        filtered = frame[mask]
-        if filtered.empty:
+        page_frame, total, current_page = get_recipe_store().browse(
+            letter=letter,
+            category=category,
+            page=int(page or 1),
+            page_size=6,
+        )
+        if page_frame.empty:
             return "No recipes match these filters.", "Page 0 of 0"
 
-        page_size = 5
-        total_pages = max(1, (len(filtered) + page_size - 1) // page_size)
-        current_page = min(max(int(page or 1), 1), total_pages)
-        start = (current_page - 1) * page_size
-        page_frame = filtered.iloc[start : start + page_size]
+        total_pages = max(1, (total + 5) // 6)
         content = "\n\n---\n\n".join(
             _recipe_markdown(row) for _, row in page_frame.iterrows()
         )
-        return content, f"Page {current_page:,} of {total_pages:,} · {len(filtered):,} recipes"
+        return content, f"Page {current_page:,} of {total_pages:,} · {total:,} recipes"
     except Exception as exc:
         return f"### Browse unavailable\n\n{html.escape(str(exc))}", ""
+
+
+def _comma_terms(value: str) -> list[str]:
+    return [
+        item.strip().lower()
+        for item in re.split(r"[,;\n]", _safe_text(value))
+        if item.strip()
+    ]
+
+
+def create_menu_plan(
+    days: int,
+    meals_per_day: int,
+    servings: int,
+    budget: str,
+    dietary_notes: str,
+    preferences: str,
+    meal_types: list[str] | None = None,
+    available_ingredients: str = "",
+    pantry_ingredients: str = "",
+    avoid_repeats: bool = True,
+    reuse_leftovers: bool = False,
+) -> tuple[str, list[dict[str, str]], list[str]]:
+    dietary = _safe_text(dietary_notes) or "none"
+    preference_text = _safe_text(preferences) or "easy practical meals"
+    available_terms = _comma_terms(available_ingredients)
+    pantry_terms = _comma_terms(pantry_ingredients)
+    requested_cuisines = _requested_cuisines(preference_text)
+    required_slots = max(1, int(days)) * max(1, int(meals_per_day))
+    unique_required = (required_slots + 1) // 2 if reuse_leftovers else required_slots
+    query = " ".join(
+        part
+        for part in (
+            preference_text,
+            " ".join(available_terms),
+            dietary if dietary != "none" else "",
+        )
+        if part
+    )
+    candidates = get_recipe_store().search(
+        query or "easy main dish",
+        limit=max(300, unique_required * 30),
+    )
+    if requested_cuisines:
+        cuisine_mask = pd.Series(True, index=candidates.index)
+        for cuisine in requested_cuisines:
+            cuisine_mask &= candidates["search_text"].str.contains(
+                cuisine, case=False, regex=False
+            )
+        candidates = candidates[cuisine_mask]
+    candidates = candidates[
+        candidates.apply(lambda row: _matches_dietary_notes(row, dietary), axis=1)
+    ].copy()
+    if available_terms and not candidates.empty:
+        candidates["available_match"] = candidates["ingredients"].apply(
+            lambda value: sum(
+                1
+                for term in available_terms
+                if _ingredient_contains_core(value, term)
+            )
+        )
+        candidates = candidates.sort_values(
+            ["available_match", "fts_rank"], ascending=[False, True]
+        )
+    candidates = candidates.head(max(60, unique_required * 8)).reset_index(drop=True)
+    if candidates.empty:
+        raise ValueError("No catalog recipes satisfy the selected menu requirements.")
+    if avoid_repeats and len(candidates) < unique_required:
+        raise ValueError(
+            "Not enough catalog recipes satisfy every mandatory filter without repeats. "
+            "Broaden the requirements or allow repeats."
+        )
+
+    candidate_lines = [
+        f"ID {candidate_id}: {_safe_text(row['name'])}; "
+        f"{_safe_text(row['minutes'])} minutes; ingredients: "
+        f"{', '.join(_parse_list(row['ingredients'])[:10])}"
+        for candidate_id, row in candidates.iterrows()
+    ]
+    selection = _generate_with_model(
+        "You select recipes for a professional kitchen menu. Balance variety, prep time, "
+        "ingredient reuse, and all stated cuisine and dietary constraints. Return only valid "
+        'JSON like {"selected_ids":[2,5,1]}. Do not include commentary.',
+        f"Select exactly {unique_required} IDs for {int(servings)} people. "
+        f"Budget target: {_safe_text(budget) or 'not specified'}. Requirements: {dietary}; "
+        f"preferences: {preference_text}; available: "
+        f"{', '.join(available_terms) or 'not specified'}. Candidates:\n"
+        + "\n".join(candidate_lines),
+        max_new_tokens=220,
+        temperature=0.0,
+    )
+    selected_ids: list[int] = []
+    try:
+        parsed = json.loads(selection[selection.find("{") : selection.rfind("}") + 1])
+        for value in parsed.get("selected_ids", []):
+            selected_id = int(value)
+            if 0 <= selected_id < len(candidates):
+                if not avoid_repeats or selected_id not in selected_ids:
+                    selected_ids.append(selected_id)
+    except (ValueError, TypeError, json.JSONDecodeError):
+        selected_ids = []
+    candidate_position = 0
+    while len(selected_ids) < unique_required:
+        selected_id = candidate_position % len(candidates)
+        candidate_position += 1
+        if not avoid_repeats or selected_id not in selected_ids:
+            selected_ids.append(selected_id)
+
+    chosen_rows = [candidates.iloc[index] for index in selected_ids[:unique_required]]
+    scheduled_rows: list[tuple[pd.Series, bool]] = []
+    chosen_position = 0
+    for slot in range(required_slots):
+        is_leftover = reuse_leftovers and slot % 2 == 1
+        if is_leftover:
+            scheduled_rows.append((scheduled_rows[-1][0], True))
+        else:
+            scheduled_rows.append((chosen_rows[chosen_position], False))
+            chosen_position += 1
+
+    labels = [_safe_text(label) for label in (meal_types or []) if _safe_text(label)]
+    if not labels:
+        labels = [f"Meal {index}" for index in range(1, int(meals_per_day) + 1)]
+    lines = [
+        "# Kitchen Menu Plan",
+        "",
+        f"For **{int(servings)} people** · **{int(days)} days** · "
+        f"Budget target: **{html.escape(_safe_text(budget) or 'not specified')}**",
+        "",
+    ]
+    shopping_items: dict[str, str] = {}
+    export_rows: list[dict[str, str]] = []
+    slot_position = 0
+    for day_number in range(1, int(days) + 1):
+        lines.extend([f"## Day {day_number}", ""])
+        for meal_number in range(1, int(meals_per_day) + 1):
+            row, is_leftover = scheduled_rows[slot_position]
+            slot_position += 1
+            meal_label = labels[(meal_number - 1) % len(labels)]
+            name_text = _safe_text(row["name"]).title()
+            ingredients = _parse_list(row.get("ingredients"))
+            steps = _parse_list(row.get("steps"))
+            heading = f"{meal_label} — {'Leftovers: ' if is_leftover else ''}{name_text}"
+            lines.append(f"### {html.escape(heading)}")
+            if is_leftover:
+                lines.extend(
+                    [
+                        "Use the previous prepared portion. Cool promptly, refrigerate safely, "
+                        "and reheat until piping hot.",
+                        "",
+                    ]
+                )
+            else:
+                lines.extend(
+                    [
+                        f"Preparation time: **{html.escape(_safe_text(row.get('minutes')))} minutes**",
+                        "",
+                        "**Ingredients**",
+                    ]
+                )
+                lines.extend(f"- {html.escape(item)}" for item in ingredients[:20])
+                lines.extend(["", "**Method**"])
+                lines.extend(
+                    f"{index}. {html.escape(step)}"
+                    for index, step in enumerate(steps[:20], 1)
+                )
+                lines.append("")
+                for item in ingredients:
+                    lowered = item.lower().strip()
+                    if lowered and not any(term in lowered for term in pantry_terms):
+                        shopping_items.setdefault(lowered, item)
+            export_rows.append(
+                {
+                    "day": str(day_number),
+                    "meal": meal_label,
+                    "recipe": name_text,
+                    "minutes": _safe_text(row.get("minutes")),
+                    "leftovers": "yes" if is_leftover else "no",
+                    "ingredients": "; ".join(ingredients),
+                }
+            )
+
+    shopping_list = sorted(shopping_items.values(), key=str.lower)
+    lines.extend(["## Consolidated Shopping List", ""])
+    lines.extend(f"- {html.escape(item)}" for item in shopping_list)
+    if pantry_terms:
+        lines.extend(
+            ["", f"Pantry items excluded: **{html.escape(', '.join(pantry_terms))}**"]
+        )
+    lines.extend(
+        [
+            "",
+            "> The budget is a planning target because the dataset has no verified ingredient prices.",
+            "> Verify allergens, halal certification, storage, food safety, and local prices before service.",
+        ]
+    )
+    return "\n".join(lines), export_rows, shopping_list
 
 
 def generate_menu_plan(
@@ -625,145 +765,58 @@ def generate_menu_plan(
     budget: str,
     dietary_notes: str,
     preferences: str,
+    meal_types: list[str] | None = None,
+    available_ingredients: str = "",
+    pantry_ingredients: str = "",
+    avoid_repeats: bool = True,
+    reuse_leftovers: bool = False,
 ) -> str:
-    dietary = _safe_text(dietary_notes) or "none"
-    preference_text = _safe_text(preferences) or "varied meals"
-    requested_cuisines = _requested_cuisines(preference_text)
-    required_meals = int(days) * int(meals_per_day)
-    query = " ".join(
-        value for value in (preference_text, dietary) if value
-    )
     try:
-        source_frame = None
-        if requested_cuisines:
-            frame = load_recipes()
-            cuisine_mask = pd.Series(True, index=frame.index)
-            for cuisine in requested_cuisines:
-                cuisine_mask &= frame["search_text"].str.contains(
-                    cuisine, case=False, regex=False
-                )
-            source_frame = frame[cuisine_mask]
-        core_tokens = [
-            token
-            for token in _query_tokens(preference_text)
-            if token not in requested_cuisines
-        ]
-        if core_tokens:
-            core_source = source_frame if source_frame is not None else load_recipes()
-            core_mask = pd.Series(True, index=core_source.index)
-            for token in core_tokens:
-                core_mask &= core_source["ingredients"].apply(
-                    lambda value, required=token: _ingredient_contains_core(value, required)
-                )
-            core_matches = core_source[core_mask]
-            if len(core_matches) >= required_meals:
-                source_frame = core_matches
-            else:
-                return (
-                    "Not enough dataset recipes contain all mandatory core ingredients "
-                    f"({', '.join(core_tokens)}) while also satisfying the cuisine and dietary filters."
-                )
-
-        candidate_count = max(30, required_meals * 4)
-        candidates, _ = _rank_recipes(
-            query, candidate_count, source_frame=source_frame
+        markdown, _, _ = create_menu_plan(
+            days, meals_per_day, servings, budget, dietary_notes, preferences,
+            meal_types, available_ingredients, pantry_ingredients,
+            avoid_repeats, reuse_leftovers,
         )
-        candidates = candidates[
-            candidates.apply(lambda row: _matches_dietary_notes(row, dietary), axis=1)
-        ].reset_index(drop=True)
-        if len(candidates) < required_meals:
-            return (
-                "Not enough dataset recipes satisfy every mandatory cuisine and dietary filter. "
-                "Broaden the preferences or increase RECIPE_MAX_ROWS."
-            )
-
-        candidate_lines = []
-        for candidate_id, row in candidates.iterrows():
-            candidate_lines.append(
-                f"ID {candidate_id}: {_safe_text(row['name'])}; "
-                f"{_safe_text(row['minutes'])} minutes; ingredients: "
-                f"{', '.join(_parse_list(row['ingredients'])[:10])}"
-            )
-        selection = _generate_with_model(
-            "You select recipes for a practical menu. Balance variety with ingredient reuse and "
-            "respect all stated filters. Return only valid JSON like "
-            '{"selected_ids":[2,5,1]}. Do not return commentary or duplicate IDs.',
-            f"Select exactly {required_meals} IDs for {int(servings)} people. "
-            f"Budget preference: {_safe_text(budget) or 'not specified'}. "
-            f"Requirements: {dietary}; {preference_text}. Candidates:\n"
-            + "\n".join(candidate_lines),
-            max_new_tokens=200,
-            temperature=0.0,
-        )
-        selected_ids: list[int] = []
-        try:
-            parsed = json.loads(selection[selection.find("{") : selection.rfind("}") + 1])
-            for value in parsed.get("selected_ids", []):
-                candidate_id = int(value)
-                if 0 <= candidate_id < len(candidates) and candidate_id not in selected_ids:
-                    selected_ids.append(candidate_id)
-        except (ValueError, TypeError, json.JSONDecodeError):
-            selected_ids = []
-        for candidate_id in range(len(candidates)):
-            if len(selected_ids) >= required_meals:
-                break
-            if candidate_id not in selected_ids:
-                selected_ids.append(candidate_id)
-
-        selected = candidates.iloc[selected_ids[:required_meals]]
-        lines = [
-            "# Dynamic Menu Plan",
-            "",
-            f"For **{int(servings)} people** · Budget target: **{html.escape(_safe_text(budget) or 'not specified')}**",
-            "",
-        ]
-        shopping_items: dict[str, str] = {}
-        selected_rows = list(selected.iterrows())
-        row_position = 0
-        for day_number in range(1, int(days) + 1):
-            lines.extend([f"## Day {day_number}", ""])
-            for meal_number in range(1, int(meals_per_day) + 1):
-                _, row = selected_rows[row_position]
-                row_position += 1
-                name = html.escape(_safe_text(row["name"]).title())
-                minutes = html.escape(_safe_text(row.get("minutes")))
-                ingredients = _parse_list(row.get("ingredients"))
-                steps = _parse_list(row.get("steps"))
-                lines.extend(
-                    [
-                        f"### Meal {meal_number} - {name}",
-                        f"Preparation time: **{minutes} minutes**",
-                        "",
-                        "**Ingredients**",
-                    ]
-                )
-                lines.extend(f"- {html.escape(item)}" for item in ingredients[:20])
-                lines.extend(["", "**Steps**"])
-                lines.extend(
-                    f"{index}. {html.escape(step)}"
-                    for index, step in enumerate(steps[:20], 1)
-                )
-                lines.append("")
-                for item in ingredients:
-                    key = item.lower().strip()
-                    if key:
-                        shopping_items.setdefault(key, item)
-
-        lines.extend(["## Consolidated Shopping List", ""])
-        lines.extend(
-            f"- {html.escape(item)}"
-            for item in sorted(shopping_items.values(), key=str.lower)
-        )
-        lines.extend(
-            [
-                "",
-                "> Budget is a planning target only because the dataset contains no ingredient prices. ",
-                "> Verify allergens, halal certification, food safety, and local prices before use.",
-            ]
-        )
-        return "\n".join(lines)
+        return markdown
     except Exception as exc:
         return f"### Menu planning unavailable\n\n{html.escape(str(exc))}"
+
+
+def generate_menu_plan_ui(
+    days: int,
+    meals_per_day: int,
+    servings: int,
+    meal_types: list[str],
+    budget: str,
+    dietary_notes: str,
+    preferences: str,
+    available_ingredients: str,
+    pantry_ingredients: str,
+    avoid_repeats: bool,
+    reuse_leftovers: bool,
+) -> tuple[str, str | None, str | None]:
+    try:
+        markdown, rows, shopping = create_menu_plan(
+            days, meals_per_day, servings, budget, dietary_notes, preferences,
+            meal_types, available_ingredients, pantry_ingredients,
+            avoid_repeats, reuse_leftovers,
+        )
+        markdown_path = _write_export("menu-plan", ".md", markdown)
+        EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        csv_path = EXPORT_DIR / f"menu-plan-{uuid.uuid4().hex[:8]}.csv"
+        with csv_path.open("w", newline="", encoding="utf-8-sig") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=["day", "meal", "recipe", "minutes", "leftovers", "ingredients"],
+            )
+            writer.writeheader()
+            writer.writerows(rows)
+            handle.write("\nSHOPPING LIST\n")
+            for item in shopping:
+                handle.write(f"{item}\n")
+        return markdown, str(csv_path), markdown_path
+    except Exception as exc:
+        return f"### Menu planning unavailable\n\n{html.escape(str(exc))}", None, None
 
 
 CHEF_THEME = gr.themes.Soft(
@@ -1165,7 +1218,7 @@ def build_demo() -> gr.Blocks:
         </p>
       </div>
       <div class="hero-stats" aria-label="Application status">
-        <span class="status-pill"><strong>{MAX_ROWS:,}</strong> recipe workspace</span>
+        <span class="status-pill"><strong>Complete</strong> indexed recipe catalog</span>
         <span class="status-pill"><strong>{html.escape(model_name)}</strong> model</span>
         <span class="status-pill"><strong>Local</strong> &amp; private</span>
       </div>
@@ -1213,11 +1266,33 @@ def build_demo() -> gr.Blocks:
                             result_count = gr.Slider(
                                 1, 10, value=5, step=1, label="Number of matches"
                             )
-                            search_button = gr.Button(
-                                "Find matching recipes  →",
-                                variant="primary",
-                                elem_classes="primary-action",
+                            search_dietary = gr.Textbox(
+                                label="Dietary and allergen filters",
+                                placeholder="Halal, vegetarian, no peanuts",
                             )
+                            search_minutes = gr.Slider(
+                                0,
+                                240,
+                                value=0,
+                                step=15,
+                                label="Maximum time (0 = any)",
+                            )
+                            gr.Examples(
+                                examples=[
+                                    ["Quick Malaysian chicken and rice"],
+                                    ["Chinese vegetable dinner"],
+                                    ["One-pot Western comfort food"],
+                                ],
+                                inputs=search_query,
+                                label="Chef shortcuts",
+                            )
+                            with gr.Row():
+                                search_button = gr.Button(
+                                    "Find matching recipes  →",
+                                    variant="primary",
+                                    elem_classes="primary-action",
+                                )
+                                search_cancel = gr.Button("Cancel", variant="secondary")
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Recommended matches</div>', padding=False)
@@ -1225,15 +1300,19 @@ def build_demo() -> gr.Blocks:
                                 "<div class='empty-state'>Your best recipe matches will appear here.</div>",
                                 elem_classes="recipe-output",
                             )
-                search_button.click(
+                search_event = search_button.click(
                     ai_search,
-                    inputs=[search_query, result_count],
+                    inputs=[search_query, result_count, search_dietary, search_minutes],
                     outputs=search_output,
                 )
-                search_query.submit(
+                search_submit_event = search_query.submit(
                     ai_search,
-                    inputs=[search_query, result_count],
+                    inputs=[search_query, result_count, search_dietary, search_minutes],
                     outputs=search_output,
+                )
+                search_cancel.click(
+                    fn=None,
+                    cancels=[search_event, search_submit_event],
                 )
 
             with gr.Tab("Surprise me"):
@@ -1340,11 +1419,22 @@ def build_demo() -> gr.Blocks:
                                 label="Dietary requirements",
                                 placeholder="Halal, no peanuts, low sodium",
                             )
-                            generate_button = gr.Button(
-                                "Create my recipe  →",
-                                variant="primary",
-                                elem_classes="primary-action",
+                            gr.Examples(
+                                examples=[
+                                    ["Malaysian spicy chicken with rice", 4, "Halal, no peanuts"],
+                                    ["Chinese tofu and vegetable stir-fry", 2, "Vegan"],
+                                    ["Western baked fish dinner", 6, "Gluten-free"],
+                                ],
+                                inputs=[generation_request, servings, dietary_notes],
+                                label="Service-ready examples",
                             )
+                            with gr.Row():
+                                generate_button = gr.Button(
+                                    "Create my recipe  →",
+                                    variant="primary",
+                                    elem_classes="primary-action",
+                                )
+                                generation_cancel = gr.Button("Cancel", variant="secondary")
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Your generated recipe</div>', padding=False)
@@ -1352,11 +1442,16 @@ def build_demo() -> gr.Blocks:
                                 "<div class='empty-state'>Your custom recipe will appear here.</div>",
                                 elem_classes="recipe-output",
                             )
-                generate_button.click(
-                    generate_recipe,
+                            recipe_download = gr.File(
+                                label="Download recipe",
+                                interactive=False,
+                            )
+                generation_event = generate_button.click(
+                    generate_recipe_ui,
                     inputs=[generation_request, servings, dietary_notes],
-                    outputs=generation_output,
+                    outputs=[generation_output, recipe_download],
                 )
+                generation_cancel.click(fn=None, cancels=[generation_event])
 
             with gr.Tab("Plan a menu"):
                 gr.HTML(
@@ -1381,6 +1476,11 @@ def build_demo() -> gr.Blocks:
                             menu_servings = gr.Slider(
                                 1, 12, value=4, step=1, label="People"
                             )
+                            menu_meal_types = gr.CheckboxGroup(
+                                ["Breakfast", "Lunch", "Dinner"],
+                                value=["Lunch", "Dinner"],
+                                label="Service periods",
+                            )
                             menu_budget = gr.Textbox(
                                 label="Budget target", placeholder="RM150 total"
                             )
@@ -1389,15 +1489,43 @@ def build_demo() -> gr.Blocks:
                                 placeholder="Halal, no peanuts",
                             )
                             menu_preferences = gr.Textbox(
-                                label="Preferences and available ingredients",
-                                lines=4,
-                                placeholder="Malaysian and Chinese food; chicken, rice, vegetables",
+                                label="Cuisine and menu style",
+                                lines=3,
+                                placeholder="Malaysian and Chinese dishes; quick family-style meals",
                             )
-                            menu_button = gr.Button(
-                                "Create menu plan  →",
-                                variant="primary",
-                                elem_classes="primary-action",
+                            menu_available = gr.Textbox(
+                                label="Ingredients already available",
+                                placeholder="Chicken, rice, carrots, cabbage",
                             )
+                            menu_pantry = gr.Textbox(
+                                label="Pantry items to exclude from shopping",
+                                placeholder="Salt, pepper, cooking oil, soy sauce",
+                            )
+                            with gr.Row():
+                                menu_no_repeats = gr.Checkbox(
+                                    value=True,
+                                    label="Avoid repeated dishes",
+                                )
+                                menu_leftovers = gr.Checkbox(
+                                    value=False,
+                                    label="Plan safe leftovers",
+                                )
+                            gr.Examples(
+                                examples=[
+                                    ["Malaysian weeknight menu"],
+                                    ["Chinese family-style menu"],
+                                    ["Balanced Western lunch service"],
+                                ],
+                                inputs=menu_preferences,
+                                label="Menu brief examples",
+                            )
+                            with gr.Row():
+                                menu_button = gr.Button(
+                                    "Create menu plan  →",
+                                    variant="primary",
+                                    elem_classes="primary-action",
+                                )
+                                menu_cancel = gr.Button("Cancel", variant="secondary")
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Menu and shopping list</div>', padding=False)
@@ -1405,18 +1533,31 @@ def build_demo() -> gr.Blocks:
                                 "<div class='empty-state'>Your menu plan and consolidated shopping list will appear here.</div>",
                                 elem_classes="recipe-output",
                             )
-                menu_button.click(
-                    generate_menu_plan,
+                            with gr.Row():
+                                menu_csv_download = gr.File(
+                                    label="Download kitchen CSV", interactive=False
+                                )
+                                menu_markdown_download = gr.File(
+                                    label="Download printable plan", interactive=False
+                                )
+                menu_event = menu_button.click(
+                    generate_menu_plan_ui,
                     inputs=[
                         menu_days,
                         menu_meals,
                         menu_servings,
+                        menu_meal_types,
                         menu_budget,
                         menu_dietary,
                         menu_preferences,
+                        menu_available,
+                        menu_pantry,
+                        menu_no_repeats,
+                        menu_leftovers,
                     ],
-                    outputs=menu_output,
+                    outputs=[menu_output, menu_csv_download, menu_markdown_download],
                 )
+                menu_cancel.click(fn=None, cancels=[menu_event])
 
         gr.HTML(
             """

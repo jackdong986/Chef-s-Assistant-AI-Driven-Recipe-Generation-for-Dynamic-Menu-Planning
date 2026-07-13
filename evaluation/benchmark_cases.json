@@ -1,0 +1,72 @@
+[
+  {
+    "id": "malaysian_halal_chicken",
+    "request": "Malaysian spicy chicken with rice",
+    "servings": 4,
+    "dietary": "halal, no peanuts",
+    "cuisines": ["malaysian"]
+  },
+  {
+    "id": "chinese_vegan_tofu",
+    "request": "Chinese tofu and seasonal vegetable stir-fry",
+    "servings": 2,
+    "dietary": "vegan",
+    "cuisines": ["chinese"]
+  },
+  {
+    "id": "italian_gluten_free",
+    "request": "Italian tomato and herb dinner",
+    "servings": 4,
+    "dietary": "gluten-free",
+    "cuisines": ["italian"]
+  },
+  {
+    "id": "indian_vegetarian_nut_free",
+    "request": "Indian vegetarian lentil main course",
+    "servings": 6,
+    "dietary": "vegetarian, no tree nuts",
+    "cuisines": ["indian"]
+  },
+  {
+    "id": "thai_shellfish_free",
+    "request": "Thai coconut vegetable curry",
+    "servings": 4,
+    "dietary": "no shellfish",
+    "cuisines": ["thai"]
+  },
+  {
+    "id": "mexican_dairy_free",
+    "request": "Mexican black bean and rice dinner",
+    "servings": 5,
+    "dietary": "dairy-free",
+    "cuisines": ["mexican"]
+  },
+  {
+    "id": "japanese_egg_free",
+    "request": "Japanese chicken and vegetable rice bowl",
+    "servings": 3,
+    "dietary": "egg-free",
+    "cuisines": ["japanese"]
+  },
+  {
+    "id": "greek_vegetarian",
+    "request": "Greek vegetarian baked vegetable dish",
+    "servings": 4,
+    "dietary": "vegetarian",
+    "cuisines": ["greek"]
+  },
+  {
+    "id": "korean_halal",
+    "request": "Korean spicy beef and vegetable bowl",
+    "servings": 4,
+    "dietary": "halal",
+    "cuisines": ["korean"]
+  },
+  {
+    "id": "french_vegan",
+    "request": "French rustic vegetable stew",
+    "servings": 6,
+    "dietary": "vegan",
+    "cuisines": ["french"]
+  }
+]

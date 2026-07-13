@@ -1,37 +1,51 @@
-# Chef's Assistant: AI-Driven Recipe Generation for Dynamic Menu Planning
+# Chef's Assistant: AI-Driven Recipe Generation and Menu Planning
 
-Chef's Assistant is an AI-powered local recipe workspace for chefs, home cooks, and
-food enthusiasts. Its Gradio interface brings recipe discovery, custom generation,
-and multi-day menu planning into one private application that runs on your machine.
+Chef's Assistant is a private, local kitchen workspace for chefs, home cooks, and
+food teams. It combines a complete indexed recipe catalog with one locally hosted
+Llama 3.2 3B Instruct model for recipe discovery, custom recipe creation, and
+multi-day menu planning.
 
-A locally hosted Llama 3.2 3B Instruct model supports every AI feature. The recipe
-CSV supplies grounded recipe records, while a LoRA adapter fine-tuned on the dataset
-improves recipe structure. An audit pass through the same model checks cuisine,
-dietary, ingredient, and step consistency before generated recipes are displayed.
+## Chef-facing features
 
-## Features
+- Search the complete recipe collection with natural-language queries, dietary and
+  allergen filters, preparation-time limits, and Llama relevance ranking.
+- Discover random Chinese, Western, or all-category recipes.
+- Browse the full catalog alphabetically with pagination.
+- Generate structured recipes with servings, quantities, cuisine requirements,
+  deterministic quality scoring, and conditional AI correction.
+- Plan menus by days, service periods, people, cuisine, dietary needs, ingredients
+  already available, and pantry staples.
+- Avoid repeated dishes or intentionally reuse leftovers with storage and reheating
+  reminders.
+- Download generated recipes as Markdown and menu plans as kitchen CSV or printable
+  Markdown files.
+- Cancel long AI operations directly from the responsive Gradio interface.
 
-- AI recipe search with dataset candidate filtering and Llama relevance ranking.
-- Random recipe discovery for all, Chinese, or Western recipes.
-- Alphabetical and category-based recipe browsing with pagination.
-- Custom recipe generation with servings and dietary requirements.
-- Dynamic menu planning by days, meals, budget, dietary needs, cuisine, and
-  available ingredients, including a consolidated shopping list.
-- Responsive Gradio interface with focused input panels and readable recipe results.
-- Private local operation with lazy model loading to conserve GPU memory.
+## How it works
+
+The application uses one AI model: Llama 3.2 3B Instruct with the fine-tuned Chef's
+Assistant LoRA adapter. SQLite full-text search is used for fast, deterministic
+catalog access; it is a database index, not an additional AI model.
+
+```text
+Recipe CSV -> SQLite full-text candidates -> Llama ranking/selection
+Chef brief -> Llama recipe draft -> deterministic checks -> conditional Llama audit
+```
+
+Deterministic checks cover JSON structure, servings, ingredient quantities, cuisine
+identity, dietary/allergen violations, duplicates, and ingredient-step consistency.
+The second model pass runs only when a check finds a problem.
 
 ## Current local configuration
 
-This checkout is configured for the following local resources:
-
 - Dataset: `C:\Users\Jack\Downloads\RAW_recipes_with_amount.csv`
 - Base model: `C:\Users\Jack\Downloads\aistackphison\aistackphison\Llama-3.2-3B-Instruct`
-- Fine-tuned LoRA adapter: `models\chef-llama-3.2-3b-lora`
-- Default server: `http://127.0.0.1:7860`
+- LoRA adapter: `models\chef-llama-3.2-3b-lora`
+- Recipe index: `.cache\recipes.sqlite3`
+- Local server: `http://127.0.0.1:7860`
 
-These paths can be changed with the environment variables documented in
-`.env.example`. The CSV, model files, virtual environment, caches, checkpoints, and
-logs are excluded by `.gitignore` and should not be pushed to GitHub.
+All paths can be changed with the variables in `.env.example`. The dataset, index,
+model outputs, virtual environment, exports, caches, and logs are ignored by Git.
 
 ## Setup on Windows
 
@@ -44,46 +58,63 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-gradio.txt
 ```
 
-The current machine already has this `.venv` configured with a CUDA-enabled PyTorch
-build. A compatible NVIDIA GPU is strongly recommended; CPU generation with a 3B
-model will be slow.
+For development and automated tests:
 
-## Run the Gradio server
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+```
 
-For start, stop, restart, health-check, and port-recovery instructions, see
-[`SERVER_GUIDE.md`](SERVER_GUIDE.md).
+## Build the complete recipe index
 
-Start the local-only server:
+The application builds the index automatically on the first dataset operation. To
+build or refresh it manually:
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\build_recipe_index.py
+```
+
+Force a rebuild after changing index logic:
+
+```powershell
+.\.venv\Scripts\python.exe .\scripts\build_recipe_index.py --force
+```
+
+The index automatically rebuilds when the CSV path, size, or modification time
+changes.
+
+## Run the server
 
 ```powershell
 .\run_gradio.ps1
 ```
 
-Then open `http://127.0.0.1:7860`. The application loads the CSV when a dataset
-feature is first used and loads the Llama model when an AI feature is first used.
+Open `http://127.0.0.1:7860`. See [`SERVER_GUIDE.md`](SERVER_GUIDE.md) for start,
+stop, restart, port recovery, and temporary public-link instructions.
 
-To create a temporary public Gradio URL, run:
+## Tests and model evaluation
 
-```powershell
-.\run_gradio.ps1 --share
-```
-
-Only use `--share` when public access is intended. Do not expose private data or an
-unattended model server.
-
-You can also launch the same application through the backend entry point:
+Run the deterministic test suite:
 
 ```powershell
-.\.venv\Scripts\python.exe .\backend\chef.py
+.\.venv\Scripts\python.exe -m pytest tests -q
 ```
 
-## Fine-tuning the single model
+GitHub Actions runs these tests without downloading the private dataset or model.
 
-The active training pipeline is `fine-tuning\fine_tune_single_model.py`. It selects
-a stratified sample so less common cuisine and dietary labels are represented, then
-LoRA fine-tunes the local Llama checkpoint.
+Run one fixed model benchmark case:
 
-Example:
+```powershell
+.\.venv\Scripts\python.exe .\evaluation\run_benchmark.py --limit 1
+```
+
+Run the full benchmark by removing `--limit`. Reports are written to the Git-ignored
+`.cache\evaluation\latest.json` and measure pass rate, quality score, audit use, and
+latency.
+
+## Fine-tuning
+
+The training pipeline uses stratified sampling so less common cuisine and dietary
+labels are represented:
 
 ```powershell
 .\.venv\Scripts\python.exe .\fine-tuning\fine_tune_single_model.py `
@@ -93,45 +124,32 @@ Example:
   --epochs 2
 ```
 
-Training output is saved under the Git-ignored `models\` directory. The application
-currently uses the adapter at scale `0.5`, which can be changed with
-`RECIPE_LORA_SCALE`.
-
-The CSV's `amount` field is not used as an ingredient quantity because it contains
-one scalar per recipe rather than an amount for each ingredient. Generated recipes
-receive explicit ingredient quantities during the model audit pass.
+Training output is saved under the Git-ignored `models\` directory. Use
+`fine-tuning\evaluate_adapter.py` to compare adapter strengths.
 
 ## Project structure
 
 ```text
-gradio_app.py                         Active Gradio application
-run_gradio.ps1                        Windows launcher
-backend/chef.py                       Alternative application launcher
-fine-tuning/fine_tune_single_model.py Single-model LoRA training
-fine-tuning/evaluate_adapter.py       Adapter-strength evaluation
-ui/                                   Static HTML design files
-models/                               Local outputs; ignored by Git
+gradio_app.py                         Gradio UI and application workflows
+recipe_store.py                       Complete SQLite/FTS recipe catalog
+recipe_quality.py                     Deterministic recipe validation
+scripts/build_recipe_index.py         Repeatable catalog index builder
+evaluation/                           Fixed model benchmark cases and runner
+tests/                                Fast deterministic unit tests
+fine-tuning/                           LoRA training and adapter evaluation
+run_gradio.ps1                        Windows server launcher
+SERVER_GUIDE.md                       Start, stop, and restart reference
 ```
 
-## Accuracy and safety notes
+## Data and safety limitations
 
-- Search and menu planning ground results in the dataset instead of asking the
-  language model to invent every record.
-- Mandatory cuisine and dietary terms are checked before results are shown. If the
-  sampled dataset does not contain enough exact matches, the menu planner reports
-  that honestly rather than silently weakening the constraints.
-- Generated recipes still require human review. Verify allergens, halal status,
-  cooking temperatures, food safety, nutrition, and local prices before use.
-
-## Possible next improvements
-
-- Add a held-out evaluation set with cuisine accuracy, dietary violation rate,
-  ingredient-step consistency, and human taste ratings.
-- Add persistent user accounts, favorites, feedback, and saved menu plans.
-- Index the full CSV in a lightweight database for faster and more complete search.
-- Add ingredient substitution and nutrition data from verified sources.
-- Containerize the application and add automated tests and GitHub Actions.
-- Build a mobile-friendly production UI after the model workflow is stable.
+- The CSV's `amount` field is not used as an ingredient quantity because it stores
+  one scalar per recipe instead of one quantity per ingredient.
+- Budget is treated as a planning target because the dataset contains no verified
+  ingredient prices. The application does not invent cost estimates.
+- Dataset recipes and AI-generated recipes require professional review. Verify
+  allergens, halal certification, storage, cooking temperatures, nutrition, and
+  local food-safety requirements before service.
 
 ## Contributor
 
