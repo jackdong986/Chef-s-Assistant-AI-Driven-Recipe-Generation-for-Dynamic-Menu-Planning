@@ -10,3 +10,4 @@ __pycache__/
 flagged/
 gradio_cached_examples/
 *.log
+PROJECT_REFERENCE.txt
