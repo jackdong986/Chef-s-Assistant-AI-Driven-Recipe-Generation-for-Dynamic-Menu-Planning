@@ -766,117 +766,667 @@ def generate_menu_plan(
         return f"### Menu planning unavailable\n\n{html.escape(str(exc))}"
 
 
+CHEF_THEME = gr.themes.Soft(
+    primary_hue=gr.themes.colors.orange,
+    secondary_hue=gr.themes.colors.amber,
+    neutral_hue=gr.themes.colors.stone,
+    radius_size=gr.themes.sizes.radius_lg,
+    text_size=gr.themes.sizes.text_md,
+    font=("Segoe UI", "Inter", "ui-sans-serif", "system-ui", "sans-serif"),
+    font_mono=("Cascadia Code", "Consolas", "ui-monospace", "monospace"),
+)
+
+APP_CSS = r"""
+:root {
+    --chef-ink: #20322a;
+    --chef-muted: #68756e;
+    --chef-forest: #173f32;
+    --chef-forest-soft: #245541;
+    --chef-orange: #e86f32;
+    --chef-orange-dark: #c95422;
+    --chef-cream: #f8f3e9;
+    --chef-paper: rgba(255, 253, 248, 0.94);
+    --chef-line: rgba(39, 61, 51, 0.13);
+    --chef-shadow: 0 18px 50px rgba(32, 50, 42, 0.09);
+}
+
+body,
+.gradio-container {
+    background:
+        radial-gradient(circle at 8% 4%, rgba(232, 111, 50, 0.10), transparent 29rem),
+        radial-gradient(circle at 92% 22%, rgba(54, 119, 89, 0.10), transparent 32rem),
+        var(--chef-cream) !important;
+    color: var(--chef-ink) !important;
+}
+
+.gradio-container {
+    --body-background-fill: #f8f3e9;
+    --body-background-fill-dark: #f8f3e9;
+    --body-text-color: #20322a;
+    --body-text-color-dark: #20322a;
+    --body-text-color-subdued: #68756e;
+    --body-text-color-subdued-dark: #68756e;
+    --background-fill-primary: #fffdf8;
+    --background-fill-primary-dark: #fffdf8;
+    --background-fill-secondary: #f8f3e9;
+    --background-fill-secondary-dark: #f8f3e9;
+    --block-background-fill: #fffdf8;
+    --block-background-fill-dark: #fffdf8;
+    --block-border-color: rgba(39, 61, 51, 0.13);
+    --block-border-color-dark: rgba(39, 61, 51, 0.13);
+    --block-info-text-color: #68756e;
+    --block-info-text-color-dark: #68756e;
+    --block-label-background-fill: transparent;
+    --block-label-background-fill-dark: transparent;
+    --block-label-text-color: #31473d;
+    --block-label-text-color-dark: #31473d;
+    --block-title-text-color: #20322a;
+    --block-title-text-color-dark: #20322a;
+    --border-color-primary: rgba(39, 61, 51, 0.16);
+    --border-color-primary-dark: rgba(39, 61, 51, 0.16);
+    --input-background-fill: #fffdf8;
+    --input-background-fill-dark: #fffdf8;
+    --input-border-color: rgba(39, 61, 51, 0.16);
+    --input-border-color-dark: rgba(39, 61, 51, 0.16);
+    --input-placeholder-color: #8b958f;
+    --input-placeholder-color-dark: #8b958f;
+    --shadow-drop: 0 1px 2px rgba(32, 50, 42, 0.05);
+    --shadow-drop-lg: 0 18px 50px rgba(32, 50, 42, 0.09);
+    max-width: 1280px !important;
+    padding: 24px 24px 52px !important;
+}
+
+#chef-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 44px 46px 40px;
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 30px;
+    background: linear-gradient(135deg, #173f32 0%, #1c4a39 58%, #6b4b2e 140%);
+    box-shadow: 0 24px 70px rgba(23, 63, 50, 0.22);
+    color: #fffaf0;
+}
+
+#chef-hero::after {
+    content: "";
+    position: absolute;
+    width: 330px;
+    height: 330px;
+    right: -120px;
+    top: -160px;
+    border: 68px solid rgba(245, 166, 97, 0.10);
+    border-radius: 50%;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+}
+
+.hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 16px;
+    color: #ffd4ad;
+    font-size: 0.76rem;
+    font-weight: 750;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.hero-eyebrow::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f7a65f;
+    box-shadow: 0 0 0 5px rgba(247, 166, 95, 0.14);
+}
+
+.hero-title {
+    margin: 0;
+    max-width: 720px;
+    color: #fffdf8;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.6rem, 6vw, 5rem);
+    font-weight: 600;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+}
+
+.hero-copy {
+    max-width: 660px;
+    margin: 20px 0 0;
+    color: rgba(255, 253, 248, 0.76);
+    font-size: 1.05rem;
+    line-height: 1.65;
+}
+
+.hero-stats {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 253, 248, 0.90);
+    font-size: 0.82rem;
+    backdrop-filter: blur(8px);
+}
+
+.status-pill strong {
+    color: #fff;
+    font-weight: 700;
+}
+
+#system-note {
+    margin: 14px 2px 20px;
+    padding: 11px 16px;
+    border: 1px solid var(--chef-line);
+    border-radius: 14px;
+    background: rgba(255, 253, 248, 0.62);
+    color: var(--chef-muted);
+    font-size: 0.82rem;
+}
+
+#chef-workspace {
+    margin-top: 6px;
+}
+
+#chef-workspace > .tab-nav {
+    gap: 6px;
+    margin-bottom: 18px;
+    padding: 6px;
+    border: 1px solid var(--chef-line);
+    border-radius: 17px;
+    background: rgba(255, 253, 248, 0.80);
+    box-shadow: 0 8px 28px rgba(32, 50, 42, 0.06);
+}
+
+#chef-workspace > .tab-nav button {
+    min-height: 44px;
+    border: 0 !important;
+    border-radius: 12px !important;
+    color: #5d6c64;
+    font-size: 0.88rem;
+    font-weight: 650;
+}
+
+#chef-workspace > .tab-nav button.selected {
+    background: var(--chef-forest) !important;
+    color: #fffdf8 !important;
+    box-shadow: 0 7px 18px rgba(23, 63, 50, 0.20);
+}
+
+.tool-heading {
+    margin: 5px 0 18px;
+    padding: 0 3px;
+}
+
+.tool-kicker {
+    margin-bottom: 6px;
+    color: var(--chef-orange-dark);
+    font-size: 0.74rem;
+    font-weight: 750;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.tool-title {
+    margin: 0;
+    color: var(--chef-ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(1.75rem, 3vw, 2.45rem);
+    font-weight: 600;
+    letter-spacing: -0.035em;
+}
+
+.tool-description {
+    max-width: 710px;
+    margin: 7px 0 0;
+    color: var(--chef-muted);
+    line-height: 1.6;
+}
+
+.workspace-grid {
+    align-items: stretch;
+    gap: 17px;
+}
+
+.control-panel,
+.output-panel {
+    border: 1px solid var(--chef-line) !important;
+    border-radius: 22px !important;
+    background: var(--chef-paper) !important;
+    box-shadow: var(--chef-shadow);
+}
+
+.control-panel {
+    padding: 22px !important;
+}
+
+.output-panel {
+    min-height: 410px;
+    padding: 24px 26px !important;
+}
+
+.panel-label {
+    margin: 0 0 15px;
+    color: var(--chef-muted);
+    font-size: 0.73rem;
+    font-weight: 750;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.field-note {
+    margin: -4px 2px 12px;
+    color: #7a857f;
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.control-panel .form,
+.control-panel .wrap,
+.control-panel input,
+.control-panel textarea {
+    background: #fffdf8 !important;
+    border-color: rgba(39, 61, 51, 0.15) !important;
+    color: var(--chef-ink) !important;
+}
+
+.primary-action {
+    min-height: 48px !important;
+    margin-top: 8px !important;
+    border: 0 !important;
+    border-radius: 13px !important;
+    background: var(--chef-orange) !important;
+    color: #fff !important;
+    font-weight: 750 !important;
+    box-shadow: 0 10px 22px rgba(232, 111, 50, 0.24) !important;
+    transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.primary-action:hover {
+    transform: translateY(-1px);
+    background: var(--chef-orange-dark) !important;
+    box-shadow: 0 13px 26px rgba(201, 84, 34, 0.27) !important;
+}
+
+.recipe-output {
+    color: var(--chef-ink);
+    line-height: 1.65;
+}
+
+.recipe-output h2,
+.recipe-output h3 {
+    color: var(--chef-forest);
+    font-family: Georgia, "Times New Roman", serif;
+    letter-spacing: -0.02em;
+}
+
+.recipe-output blockquote {
+    border-left-color: var(--chef-orange) !important;
+    background: #fff7ec;
+    color: #654c3d;
+}
+
+.empty-state {
+    display: flex;
+    min-height: 330px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #7b8780;
+}
+
+.browse-status {
+    min-height: 0 !important;
+    margin-bottom: 8px;
+    color: var(--chef-muted);
+    font-size: 0.83rem;
+}
+
+#chef-footer {
+    margin-top: 22px;
+    padding: 18px 4px 0;
+    border-top: 1px solid var(--chef-line);
+    color: var(--chef-muted);
+    font-size: 0.78rem;
+    line-height: 1.6;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .gradio-container {
+        padding: 12px 12px 32px !important;
+    }
+
+    #chef-hero {
+        padding: 30px 24px 28px;
+        border-radius: 22px;
+    }
+
+    .hero-title {
+        font-size: 2.65rem;
+    }
+
+    .hero-copy {
+        font-size: 0.96rem;
+    }
+
+    #chef-workspace > .tab-nav {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+    }
+
+    #chef-workspace > .tab-nav button {
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+
+    .control-panel,
+    .output-panel {
+        border-radius: 18px !important;
+    }
+
+    .output-panel {
+        min-height: 300px;
+        padding: 20px !important;
+    }
+}
+"""
+
+
 def build_demo() -> gr.Blocks:
-    model_status = (
-        GENERATION_MODEL
-        or f"{BASE_MODEL} + {LORA_ADAPTER} (LoRA scale {LORA_SCALE:g})"
+    model_name = Path(GENERATION_MODEL or BASE_MODEL).name
+    adapter_label = "fine-tuned LoRA active" if not GENERATION_MODEL else "local checkpoint"
+    hero = f"""
+    <header id="chef-hero">
+      <div class="hero-content">
+        <div class="hero-eyebrow">Private local AI kitchen</div>
+        <h1 class="hero-title">Cook with confidence,<br>plan with intelligence.</h1>
+        <p class="hero-copy">
+          Search a large recipe collection, create dishes around your requirements,
+          and turn everyday ingredients into practical menus—all from one workspace.
+        </p>
+      </div>
+      <div class="hero-stats" aria-label="Application status">
+        <span class="status-pill"><strong>{MAX_ROWS:,}</strong> recipe workspace</span>
+        <span class="status-pill"><strong>{html.escape(model_name)}</strong> model</span>
+        <span class="status-pill"><strong>Local</strong> &amp; private</span>
+      </div>
+    </header>
+    """
+    system_note = (
+        f"Dataset: {html.escape(DATASET_PATH.name)} · {html.escape(adapter_label)} · "
+        f"adapter scale {LORA_SCALE:g} · AI loads on first use"
     )
-    dataset_status = (
-        f"Dataset: `{DATASET_PATH}` ({MAX_ROWS:,} rows loaded at most)  \n"
-        f"Single AI model: `{model_status}`  \n"
-        "The same model reranks searches, generates recipes, and plans menus."
-    )
 
-    with gr.Blocks(title="Chef's Assistant") as demo:
-        gr.Markdown("# Chef's Assistant\nTemporary local Gradio interface for the recipe project.")
-        gr.Markdown(dataset_status)
+    with gr.Blocks(
+        title="Chef's Assistant",
+        theme=CHEF_THEME,
+        css=APP_CSS,
+        fill_width=True,
+    ) as demo:
+        gr.HTML(hero, padding=False)
+        gr.HTML(f'<div id="system-note">{system_note}</div>', padding=False)
 
-        with gr.Tab("AI recipe search"):
-            gr.Markdown(
-                "The CSV selects candidates, then the same Llama model scores their relevance."
-            )
-            search_query = gr.Textbox(
-                label="What recipe are you looking for?",
-                placeholder="e.g. quick spicy chicken with rice",
-            )
-            result_count = gr.Slider(1, 10, value=5, step=1, label="Results")
-            search_button = gr.Button("Search", variant="primary")
-            search_output = gr.Markdown()
-            search_button.click(
-                ai_search,
-                inputs=[search_query, result_count],
-                outputs=search_output,
-            )
-            search_query.submit(
-                ai_search,
-                inputs=[search_query, result_count],
-                outputs=search_output,
-            )
-
-        with gr.Tab("Random recipe"):
-            category = gr.Dropdown(
-                ["All", "Chinese", "Western"], value="All", label="Category"
-            )
-            random_button = gr.Button("Pick a recipe", variant="primary")
-            random_output = gr.Markdown()
-            random_button.click(random_recipe, inputs=category, outputs=random_output)
-
-        with gr.Tab("Browse all recipes"):
-            with gr.Row():
-                browse_letter = gr.Dropdown(
-                    ["All"] + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-                    value="All",
-                    label="Starts with",
+        with gr.Tabs(elem_id="chef-workspace"):
+            with gr.Tab("Search recipes"):
+                gr.HTML(
+                    """
+                    <section class="tool-heading">
+                      <div class="tool-kicker">Discover</div>
+                      <h2 class="tool-title">Find the right recipe, faster.</h2>
+                      <p class="tool-description">Describe what you want in natural language. The dataset supplies grounded candidates and the local Llama model ranks the closest matches.</p>
+                    </section>
+                    """,
+                    padding=False,
                 )
-                browse_category = gr.Dropdown(
-                    ["All", "Chinese", "Western"], value="All", label="Category"
+                with gr.Row(elem_classes="workspace-grid"):
+                    with gr.Column(scale=4, min_width=310):
+                        with gr.Group(elem_classes="control-panel"):
+                            gr.HTML('<div class="panel-label">Search details</div>', padding=False)
+                            search_query = gr.Textbox(
+                                label="What would you like to cook?",
+                                placeholder="Quick spicy chicken with rice",
+                                lines=3,
+                            )
+                            gr.HTML(
+                                '<p class="field-note">Try a cuisine, main ingredient, cooking style, or time limit.</p>',
+                                padding=False,
+                            )
+                            result_count = gr.Slider(
+                                1, 10, value=5, step=1, label="Number of matches"
+                            )
+                            search_button = gr.Button(
+                                "Find matching recipes  →",
+                                variant="primary",
+                                elem_classes="primary-action",
+                            )
+                    with gr.Column(scale=7, min_width=380):
+                        with gr.Group(elem_classes="output-panel"):
+                            gr.HTML('<div class="panel-label">Recommended matches</div>', padding=False)
+                            search_output = gr.Markdown(
+                                "<div class='empty-state'>Your best recipe matches will appear here.</div>",
+                                elem_classes="recipe-output",
+                            )
+                search_button.click(
+                    ai_search,
+                    inputs=[search_query, result_count],
+                    outputs=search_output,
                 )
-                browse_page = gr.Number(value=1, precision=0, label="Page")
-            browse_button = gr.Button("Load recipes", variant="primary")
-            browse_status = gr.Markdown()
-            browse_output = gr.Markdown()
-            browse_button.click(
-                browse_recipes,
-                inputs=[browse_letter, browse_category, browse_page],
-                outputs=[browse_output, browse_status],
-            )
+                search_query.submit(
+                    ai_search,
+                    inputs=[search_query, result_count],
+                    outputs=search_output,
+                )
 
-        with gr.Tab("Generate with AI"):
-            generation_request = gr.Textbox(
-                label="Describe your recipe",
-                lines=4,
-                placeholder="e.g. a simple Malaysian-inspired chicken dinner",
-            )
-            servings = gr.Slider(1, 12, value=4, step=1, label="Servings")
-            dietary_notes = gr.Textbox(
-                label="Dietary requirements",
-                placeholder="e.g. no peanuts, low sodium",
-            )
-            generate_button = gr.Button("Generate recipe", variant="primary")
-            generation_output = gr.Markdown()
-            generate_button.click(
-                generate_recipe,
-                inputs=[generation_request, servings, dietary_notes],
-                outputs=generation_output,
-            )
+            with gr.Tab("Surprise me"):
+                gr.HTML(
+                    """
+                    <section class="tool-heading">
+                      <div class="tool-kicker">Inspiration</div>
+                      <h2 class="tool-title">Let the kitchen choose.</h2>
+                      <p class="tool-description">Pick a collection and discover a complete recipe at random—useful when you want inspiration without another decision.</p>
+                    </section>
+                    """,
+                    padding=False,
+                )
+                with gr.Row(elem_classes="workspace-grid"):
+                    with gr.Column(scale=4, min_width=310):
+                        with gr.Group(elem_classes="control-panel"):
+                            gr.HTML('<div class="panel-label">Choose a collection</div>', padding=False)
+                            category = gr.Radio(
+                                ["All", "Chinese", "Western"],
+                                value="All",
+                                label="Recipe category",
+                            )
+                            random_button = gr.Button(
+                                "Pick a recipe  →",
+                                variant="primary",
+                                elem_classes="primary-action",
+                            )
+                    with gr.Column(scale=7, min_width=380):
+                        with gr.Group(elem_classes="output-panel"):
+                            gr.HTML('<div class="panel-label">Today\'s discovery</div>', padding=False)
+                            random_output = gr.Markdown(
+                                "<div class='empty-state'>Choose a category, then let chance set the menu.</div>",
+                                elem_classes="recipe-output",
+                            )
+                random_button.click(random_recipe, inputs=category, outputs=random_output)
 
-        with gr.Tab("Dynamic menu planner"):
-            with gr.Row():
-                menu_days = gr.Slider(1, 7, value=3, step=1, label="Days")
-                menu_meals = gr.Slider(1, 3, value=2, step=1, label="Meals per day")
-                menu_servings = gr.Slider(1, 12, value=4, step=1, label="People")
-            menu_budget = gr.Textbox(label="Budget", placeholder="e.g. RM150 total")
-            menu_dietary = gr.Textbox(
-                label="Dietary requirements", placeholder="e.g. halal, no peanuts"
-            )
-            menu_preferences = gr.Textbox(
-                label="Preferences and available ingredients",
-                placeholder="e.g. Malaysian and Chinese food; chicken, rice, vegetables",
-            )
-            menu_button = gr.Button("Create menu plan", variant="primary")
-            menu_output = gr.Markdown()
-            menu_button.click(
-                generate_menu_plan,
-                inputs=[
-                    menu_days,
-                    menu_meals,
-                    menu_servings,
-                    menu_budget,
-                    menu_dietary,
-                    menu_preferences,
-                ],
-                outputs=menu_output,
-            )
+            with gr.Tab("Browse collection"):
+                gr.HTML(
+                    """
+                    <section class="tool-heading">
+                      <div class="tool-kicker">Recipe library</div>
+                      <h2 class="tool-title">Explore the collection your way.</h2>
+                      <p class="tool-description">Browse alphabetically, narrow by category, and move through the recipe library one page at a time.</p>
+                    </section>
+                    """,
+                    padding=False,
+                )
+                with gr.Row(elem_classes="workspace-grid"):
+                    with gr.Column(scale=4, min_width=310):
+                        with gr.Group(elem_classes="control-panel"):
+                            gr.HTML('<div class="panel-label">Library filters</div>', padding=False)
+                            browse_letter = gr.Dropdown(
+                                ["All"] + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                                value="All",
+                                label="Recipe starts with",
+                            )
+                            browse_category = gr.Dropdown(
+                                ["All", "Chinese", "Western"],
+                                value="All",
+                                label="Category",
+                            )
+                            browse_page = gr.Number(value=1, precision=0, label="Page number")
+                            browse_button = gr.Button(
+                                "Browse recipes  →",
+                                variant="primary",
+                                elem_classes="primary-action",
+                            )
+                    with gr.Column(scale=7, min_width=380):
+                        with gr.Group(elem_classes="output-panel"):
+                            gr.HTML('<div class="panel-label">Recipe collection</div>', padding=False)
+                            browse_status = gr.Markdown(elem_classes="browse-status")
+                            browse_output = gr.Markdown(
+                                "<div class='empty-state'>Set your filters to open the recipe library.</div>",
+                                elem_classes="recipe-output",
+                            )
+                browse_button.click(
+                    browse_recipes,
+                    inputs=[browse_letter, browse_category, browse_page],
+                    outputs=[browse_output, browse_status],
+                )
+
+            with gr.Tab("Create a recipe"):
+                gr.HTML(
+                    """
+                    <section class="tool-heading">
+                      <div class="tool-kicker">AI recipe studio</div>
+                      <h2 class="tool-title">Turn an idea into a complete dish.</h2>
+                      <p class="tool-description">Describe the meal you have in mind. The local model builds a structured recipe and audits it against your cuisine and dietary requirements.</p>
+                    </section>
+                    """,
+                    padding=False,
+                )
+                with gr.Row(elem_classes="workspace-grid"):
+                    with gr.Column(scale=4, min_width=310):
+                        with gr.Group(elem_classes="control-panel"):
+                            gr.HTML('<div class="panel-label">Recipe brief</div>', padding=False)
+                            generation_request = gr.Textbox(
+                                label="Describe your recipe",
+                                lines=5,
+                                placeholder="A simple Malaysian-inspired spicy chicken dinner with rice",
+                            )
+                            servings = gr.Slider(1, 12, value=4, step=1, label="Servings")
+                            dietary_notes = gr.Textbox(
+                                label="Dietary requirements",
+                                placeholder="Halal, no peanuts, low sodium",
+                            )
+                            generate_button = gr.Button(
+                                "Create my recipe  →",
+                                variant="primary",
+                                elem_classes="primary-action",
+                            )
+                    with gr.Column(scale=7, min_width=380):
+                        with gr.Group(elem_classes="output-panel"):
+                            gr.HTML('<div class="panel-label">Your generated recipe</div>', padding=False)
+                            generation_output = gr.Markdown(
+                                "<div class='empty-state'>Your custom recipe will appear here.</div>",
+                                elem_classes="recipe-output",
+                            )
+                generate_button.click(
+                    generate_recipe,
+                    inputs=[generation_request, servings, dietary_notes],
+                    outputs=generation_output,
+                )
+
+            with gr.Tab("Plan a menu"):
+                gr.HTML(
+                    """
+                    <section class="tool-heading">
+                      <div class="tool-kicker">Menu planning</div>
+                      <h2 class="tool-title">Build a practical plan for the days ahead.</h2>
+                      <p class="tool-description">Set the schedule, people, budget target, dietary needs, and preferences. The planner selects grounded recipes and prepares one shopping list.</p>
+                    </section>
+                    """,
+                    padding=False,
+                )
+                with gr.Row(elem_classes="workspace-grid"):
+                    with gr.Column(scale=5, min_width=330):
+                        with gr.Group(elem_classes="control-panel"):
+                            gr.HTML('<div class="panel-label">Planning brief</div>', padding=False)
+                            with gr.Row():
+                                menu_days = gr.Slider(1, 7, value=3, step=1, label="Days")
+                                menu_meals = gr.Slider(
+                                    1, 3, value=2, step=1, label="Meals per day"
+                                )
+                            menu_servings = gr.Slider(
+                                1, 12, value=4, step=1, label="People"
+                            )
+                            menu_budget = gr.Textbox(
+                                label="Budget target", placeholder="RM150 total"
+                            )
+                            menu_dietary = gr.Textbox(
+                                label="Dietary requirements",
+                                placeholder="Halal, no peanuts",
+                            )
+                            menu_preferences = gr.Textbox(
+                                label="Preferences and available ingredients",
+                                lines=4,
+                                placeholder="Malaysian and Chinese food; chicken, rice, vegetables",
+                            )
+                            menu_button = gr.Button(
+                                "Create menu plan  →",
+                                variant="primary",
+                                elem_classes="primary-action",
+                            )
+                    with gr.Column(scale=7, min_width=380):
+                        with gr.Group(elem_classes="output-panel"):
+                            gr.HTML('<div class="panel-label">Menu and shopping list</div>', padding=False)
+                            menu_output = gr.Markdown(
+                                "<div class='empty-state'>Your menu plan and consolidated shopping list will appear here.</div>",
+                                elem_classes="recipe-output",
+                            )
+                menu_button.click(
+                    generate_menu_plan,
+                    inputs=[
+                        menu_days,
+                        menu_meals,
+                        menu_servings,
+                        menu_budget,
+                        menu_dietary,
+                        menu_preferences,
+                    ],
+                    outputs=menu_output,
+                )
+
+        gr.HTML(
+            """
+            <footer id="chef-footer">
+              Chef's Assistant runs locally on your machine. Always verify allergens,
+              food safety, halal certification, nutrition, and ingredient prices before use.
+            </footer>
+            """,
+            padding=False,
+        )
 
     return demo
 

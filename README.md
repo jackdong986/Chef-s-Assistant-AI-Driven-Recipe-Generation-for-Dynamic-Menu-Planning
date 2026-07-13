@@ -1,14 +1,13 @@
 # Chef's Assistant: AI-Driven Recipe Generation for Dynamic Menu Planning
 
-Chef's Assistant is a local Gradio application for searching, browsing, generating,
-and planning recipes. It keeps the original project objectives while replacing the
-old GPT-2 plus SentenceTransformer setup with one Llama 3.2 3B Instruct model.
+Chef's Assistant is an AI-powered local recipe workspace for chefs, home cooks, and
+food enthusiasts. Its Gradio interface brings recipe discovery, custom generation,
+and multi-day menu planning into one private application that runs on your machine.
 
-The recipe CSV supplies factual recipe records. The single Llama model reranks
-search results, creates custom recipes, and selects recipes for menu plans. A LoRA
-adapter fine-tuned on the supplied dataset improves recipe structure while a second
-audit pass through the same loaded model enforces cuisine, dietary, ingredient, and
-step consistency.
+A locally hosted Llama 3.2 3B Instruct model supports every AI feature. The recipe
+CSV supplies grounded recipe records, while a LoRA adapter fine-tuned on the dataset
+improves recipe structure. An audit pass through the same model checks cuisine,
+dietary, ingredient, and step consistency before generated recipes are displayed.
 
 ## Features
 
@@ -18,7 +17,8 @@ step consistency.
 - Custom recipe generation with servings and dietary requirements.
 - Dynamic menu planning by days, meals, budget, dietary needs, cuisine, and
   available ingredients, including a consolidated shopping list.
-- A temporary local Gradio web interface with lazy model loading.
+- Responsive Gradio interface with focused input panels and readable recipe results.
+- Private local operation with lazy model loading to conserve GPU memory.
 
 ## Current local configuration
 
@@ -71,7 +71,7 @@ To create a temporary public Gradio URL, run:
 Only use `--share` when public access is intended. Do not expose private data or an
 unattended model server.
 
-The legacy command remains available as a compatibility entry point:
+You can also launch the same application through the backend entry point:
 
 ```powershell
 .\.venv\Scripts\python.exe .\backend\chef.py
@@ -106,10 +106,10 @@ receive explicit ingredient quantities during the model audit pass.
 ```text
 gradio_app.py                         Active Gradio application
 run_gradio.ps1                        Windows launcher
-backend/chef.py                       Compatibility launcher
+backend/chef.py                       Alternative application launcher
 fine-tuning/fine_tune_single_model.py Single-model LoRA training
 fine-tuning/evaluate_adapter.py       Adapter-strength evaluation
-ui/                                   Original HTML interface retained for reference
+ui/                                   Static HTML design files
 models/                               Local outputs; ignored by Git
 ```
 

@@ -8,6 +8,6 @@ saves both an adapter and a merged model under the Git-ignored `models/` directo
 application uses a 0.5 adapter scale for structured recipe drafts and the same base
 model with reduced or disabled adapter influence for constraint auditing.
 
-The previous GPT-2 and SentenceTransformer scripts were removed from the active tree
-when the project moved from a two-model Flask design to the current one-model Gradio
-architecture. They remain available in Git history.
+The training prompts preserve cuisine, style, and dietary labels from the dataset.
+Generated recipes are evaluated again at runtime so mandatory constraints remain
+explicit in the final result.
