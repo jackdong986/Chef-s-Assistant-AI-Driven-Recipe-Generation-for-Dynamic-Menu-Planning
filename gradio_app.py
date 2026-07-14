@@ -831,101 +831,217 @@ CHEF_THEME = gr.themes.Soft(
 
 APP_CSS = r"""
 :root {
-    --chef-ink: #20322a;
-    --chef-muted: #68756e;
-    --chef-forest: #173f32;
-    --chef-forest-soft: #245541;
-    --chef-orange: #e86f32;
-    --chef-orange-dark: #c95422;
-    --chef-cream: #f8f3e9;
-    --chef-paper: rgba(255, 253, 248, 0.94);
-    --chef-line: rgba(39, 61, 51, 0.13);
-    --chef-shadow: 0 18px 50px rgba(32, 50, 42, 0.09);
+    --chef-ink: #17241e;
+    --chef-muted: #66736c;
+    --chef-forest: #153e30;
+    --chef-forest-2: #245a45;
+    --chef-sage: #e8efe9;
+    --chef-sage-2: #d8e5dc;
+    --chef-orange: #e7652b;
+    --chef-orange-dark: #c84e1d;
+    --chef-cream: #f4f1e8;
+    --chef-paper: #fffefa;
+    --chef-line: rgba(27, 57, 44, 0.13);
+    --chef-line-strong: rgba(27, 57, 44, 0.22);
+    --chef-shadow-sm: 0 8px 24px rgba(24, 51, 40, 0.06);
+    --chef-shadow: 0 20px 55px rgba(24, 51, 40, 0.10);
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body,
 .gradio-container {
     background:
-        radial-gradient(circle at 8% 4%, rgba(232, 111, 50, 0.10), transparent 29rem),
-        radial-gradient(circle at 92% 22%, rgba(54, 119, 89, 0.10), transparent 32rem),
+        radial-gradient(circle at 5% 2%, rgba(231, 101, 43, 0.09), transparent 28rem),
+        radial-gradient(circle at 96% 18%, rgba(36, 90, 69, 0.10), transparent 34rem),
         var(--chef-cream) !important;
     color: var(--chef-ink) !important;
 }
 
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 .gradio-container {
-    --body-background-fill: #f8f3e9;
-    --body-background-fill-dark: #f8f3e9;
-    --body-text-color: #20322a;
-    --body-text-color-dark: #20322a;
-    --body-text-color-subdued: #68756e;
-    --body-text-color-subdued-dark: #68756e;
-    --background-fill-primary: #fffdf8;
-    --background-fill-primary-dark: #fffdf8;
-    --background-fill-secondary: #f8f3e9;
-    --background-fill-secondary-dark: #f8f3e9;
-    --block-background-fill: #fffdf8;
-    --block-background-fill-dark: #fffdf8;
-    --block-border-color: rgba(39, 61, 51, 0.13);
-    --block-border-color-dark: rgba(39, 61, 51, 0.13);
-    --block-info-text-color: #68756e;
-    --block-info-text-color-dark: #68756e;
+    --body-background-fill: #f4f1e8;
+    --body-background-fill-dark: #f4f1e8;
+    --body-text-color: #17241e;
+    --body-text-color-dark: #17241e;
+    --body-text-color-subdued: #66736c;
+    --body-text-color-subdued-dark: #66736c;
+    --background-fill-primary: #fffefa;
+    --background-fill-primary-dark: #fffefa;
+    --background-fill-secondary: #f4f1e8;
+    --background-fill-secondary-dark: #f4f1e8;
+    --block-background-fill: #fffefa;
+    --block-background-fill-dark: #fffefa;
+    --block-border-color: rgba(27, 57, 44, 0.13);
+    --block-border-color-dark: rgba(27, 57, 44, 0.13);
+    --block-info-text-color: #66736c;
+    --block-info-text-color-dark: #66736c;
     --block-label-background-fill: transparent;
     --block-label-background-fill-dark: transparent;
-    --block-label-text-color: #31473d;
-    --block-label-text-color-dark: #31473d;
-    --block-title-text-color: #20322a;
-    --block-title-text-color-dark: #20322a;
-    --border-color-primary: rgba(39, 61, 51, 0.16);
-    --border-color-primary-dark: rgba(39, 61, 51, 0.16);
-    --input-background-fill: #fffdf8;
-    --input-background-fill-dark: #fffdf8;
-    --input-border-color: rgba(39, 61, 51, 0.16);
-    --input-border-color-dark: rgba(39, 61, 51, 0.16);
+    --block-label-text-color: #35483f;
+    --block-label-text-color-dark: #35483f;
+    --block-title-text-color: #17241e;
+    --block-title-text-color-dark: #17241e;
+    --border-color-primary: rgba(27, 57, 44, 0.17);
+    --border-color-primary-dark: rgba(27, 57, 44, 0.17);
+    --input-background-fill: #fffefa;
+    --input-background-fill-dark: #fffefa;
+    --input-border-color: rgba(27, 57, 44, 0.17);
+    --input-border-color-dark: rgba(27, 57, 44, 0.17);
     --input-placeholder-color: #8b958f;
     --input-placeholder-color-dark: #8b958f;
-    --shadow-drop: 0 1px 2px rgba(32, 50, 42, 0.05);
-    --shadow-drop-lg: 0 18px 50px rgba(32, 50, 42, 0.09);
-    max-width: 1280px !important;
-    padding: 24px 24px 52px !important;
+    --shadow-drop: 0 1px 2px rgba(24, 51, 40, 0.05);
+    --shadow-drop-lg: 0 20px 55px rgba(24, 51, 40, 0.10);
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    max-width: 1420px !important;
+    padding: 18px 28px 54px !important;
+}
+
+#chef-app-bar,
+#chef-hero,
+#system-note,
+#chef-workspace {
+    width: 100%;
+    max-width: 100%;
+}
+
+#chef-app-bar {
+    display: flex;
+    min-height: 62px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    margin-bottom: 14px;
+    padding: 10px 4px;
+}
+
+.brand-lockup {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.brand-mark {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 13px;
+    background: var(--chef-forest);
+    box-shadow: 0 9px 20px rgba(21, 62, 48, 0.20);
+    color: #fff;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+.brand-name {
+    color: var(--chef-ink);
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+}
+
+.brand-subtitle {
+    margin-top: 2px;
+    color: var(--chef-muted);
+    font-size: 0.72rem;
+}
+
+.top-status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.privacy-badge,
+.model-badge {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 11px;
+    border: 1px solid var(--chef-line);
+    border-radius: 999px;
+    background: rgba(255, 254, 250, 0.72);
+    color: #506158;
+    font-size: 0.74rem;
+    font-weight: 650;
+}
+
+.privacy-badge::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #39a66e;
+    box-shadow: 0 0 0 4px rgba(57, 166, 110, 0.12);
 }
 
 #chef-hero {
     position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.55fr);
+    gap: 46px;
     overflow: hidden;
-    padding: 44px 46px 40px;
+    padding: 46px 48px;
     border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 30px;
-    background: linear-gradient(135deg, #173f32 0%, #1c4a39 58%, #6b4b2e 140%);
-    box-shadow: 0 24px 70px rgba(23, 63, 50, 0.22);
+    border-radius: 28px;
+    background: linear-gradient(135deg, #12382b 0%, #1b4c39 60%, #725038 145%);
+    box-shadow: 0 26px 70px rgba(21, 62, 48, 0.22);
     color: #fffaf0;
 }
 
+#chef-hero::before,
 #chef-hero::after {
     content: "";
     position: absolute;
-    width: 330px;
-    height: 330px;
-    right: -120px;
-    top: -160px;
-    border: 68px solid rgba(245, 166, 97, 0.10);
     border-radius: 50%;
+    pointer-events: none;
+}
+
+#chef-hero::before {
+    width: 240px;
+    height: 240px;
+    right: 18%;
+    bottom: -180px;
+    background: rgba(231, 101, 43, 0.15);
+    filter: blur(3px);
+}
+
+#chef-hero::after {
+    width: 340px;
+    height: 340px;
+    right: -155px;
+    top: -185px;
+    border: 72px solid rgba(245, 166, 97, 0.09);
 }
 
 .hero-content {
     position: relative;
     z-index: 1;
-    max-width: 780px;
+    align-self: center;
+    max-width: 800px;
 }
 
 .hero-eyebrow {
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
     color: #ffd4ad;
-    font-size: 0.76rem;
-    font-weight: 750;
-    letter-spacing: 0.14em;
+    font-size: 0.73rem;
+    font-weight: 800;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
 }
 
@@ -940,100 +1056,178 @@ body,
 
 .hero-title {
     margin: 0;
-    max-width: 720px;
+    max-width: 760px;
     color: #fffdf8;
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(2.6rem, 6vw, 5rem);
+    font-size: clamp(2.5rem, 5vw, 4.65rem);
     font-weight: 600;
     letter-spacing: -0.055em;
-    line-height: 0.98;
+    line-height: 1.01;
 }
 
 .hero-copy {
-    max-width: 660px;
+    max-width: 680px;
     margin: 20px 0 0;
     color: rgba(255, 253, 248, 0.76);
-    font-size: 1.05rem;
-    line-height: 1.65;
+    font-size: 1rem;
+    line-height: 1.62;
 }
 
-.hero-stats {
+.hero-command {
     position: relative;
     z-index: 1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 30px;
+    align-self: stretch;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.075);
+    backdrop-filter: blur(12px);
 }
 
-.status-pill {
-    display: inline-flex;
+.command-kicker {
+    margin: 1px 0 15px;
+    color: rgba(255, 244, 230, 0.60);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.command-item {
+    display: grid;
+    grid-template-columns: 32px 1fr;
     align-items: center;
-    gap: 8px;
-    padding: 9px 13px;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 253, 248, 0.90);
-    font-size: 0.82rem;
-    backdrop-filter: blur(8px);
+    gap: 11px;
+    padding: 13px 2px;
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
 }
 
-.status-pill strong {
-    color: #fff;
-    font-weight: 700;
+.command-item:first-of-type {
+    border-top: 0;
+}
+
+.command-index {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffbd82;
+    font-size: 0.7rem;
+    font-weight: 800;
+}
+
+.command-title {
+    color: #fffdf8;
+    font-size: 0.84rem;
+    font-weight: 750;
+}
+
+.command-copy {
+    margin-top: 2px;
+    color: rgba(255, 253, 248, 0.58);
+    font-size: 0.72rem;
+    line-height: 1.4;
 }
 
 #system-note {
-    margin: 14px 2px 20px;
-    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 13px 2px 19px;
+    padding: 10px 16px;
     border: 1px solid var(--chef-line);
-    border-radius: 14px;
-    background: rgba(255, 253, 248, 0.62);
+    border-radius: 12px;
+    background: rgba(255, 254, 250, 0.66);
     color: var(--chef-muted);
-    font-size: 0.82rem;
+    font-size: 0.75rem;
+    text-align: center;
 }
 
 #chef-workspace {
-    margin-top: 6px;
+    margin-top: 4px;
 }
 
-#chef-workspace > .tab-nav {
-    gap: 6px;
-    margin-bottom: 18px;
+.gradio-container .tab-nav,
+.gradio-container [role="tablist"] {
+    position: sticky;
+    z-index: 20;
+    top: 10px;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    margin-bottom: 22px;
     padding: 6px;
     border: 1px solid var(--chef-line);
-    border-radius: 17px;
-    background: rgba(255, 253, 248, 0.80);
-    box-shadow: 0 8px 28px rgba(32, 50, 42, 0.06);
+    border-radius: 16px;
+    background: rgba(255, 254, 250, 0.92);
+    box-shadow: 0 10px 28px rgba(24, 51, 40, 0.08);
+    backdrop-filter: blur(14px);
+    max-width: 100%;
 }
 
-#chef-workspace > .tab-nav button {
-    min-height: 44px;
+.gradio-container .tab-nav button,
+.gradio-container [role="tablist"] [role="tab"] {
+    min-width: 0;
+    min-height: 46px;
     border: 0 !important;
-    border-radius: 12px !important;
-    color: #5d6c64;
-    font-size: 0.88rem;
-    font-weight: 650;
+    border-radius: 11px !important;
+    color: #59685f;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 
-#chef-workspace > .tab-nav button.selected {
+.gradio-container .tab-nav button.selected,
+.gradio-container [role="tablist"] [role="tab"][aria-selected="true"] {
     background: var(--chef-forest) !important;
     color: #fffdf8 !important;
-    box-shadow: 0 7px 18px rgba(23, 63, 50, 0.20);
+    box-shadow: 0 8px 20px rgba(21, 62, 48, 0.22);
+}
+
+.gradio-container .tab-nav button:not(.selected):hover,
+.gradio-container [role="tablist"] [role="tab"]:not([aria-selected="true"]):hover {
+    background: var(--chef-sage) !important;
+    color: var(--chef-forest) !important;
 }
 
 .tool-heading {
-    margin: 5px 0 18px;
-    padding: 0 3px;
+    display: grid;
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 17px;
+    align-items: start;
+    margin: 3px 0 22px;
+    padding: 0 4px;
+}
+
+.tool-number {
+    display: grid;
+    width: 54px;
+    height: 54px;
+    place-items: center;
+    border: 1px solid var(--chef-line-strong);
+    border-radius: 16px;
+    background: rgba(255, 254, 250, 0.74);
+    box-shadow: var(--chef-shadow-sm);
+    color: var(--chef-orange-dark);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.18rem;
+    font-weight: 700;
+}
+
+.tool-heading-copy {
+    min-width: 0;
 }
 
 .tool-kicker {
-    margin-bottom: 6px;
+    margin: 1px 0 5px;
     color: var(--chef-orange-dark);
-    font-size: 0.74rem;
-    font-weight: 750;
-    letter-spacing: 0.13em;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
@@ -1041,84 +1235,254 @@ body,
     margin: 0;
     color: var(--chef-ink);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(1.75rem, 3vw, 2.45rem);
+    font-size: clamp(1.7rem, 3vw, 2.35rem);
     font-weight: 600;
     letter-spacing: -0.035em;
 }
 
 .tool-description {
-    max-width: 710px;
-    margin: 7px 0 0;
+    max-width: 760px;
+    margin: 6px 0 0;
     color: var(--chef-muted);
-    line-height: 1.6;
+    font-size: 0.91rem;
+    line-height: 1.55;
 }
 
 .workspace-grid {
-    align-items: stretch;
-    gap: 17px;
+    align-items: flex-start;
+    gap: 22px;
+    max-width: 100%;
+}
+
+.workspace-grid > div {
+    min-width: 0 !important;
 }
 
 .control-panel,
 .output-panel {
     border: 1px solid var(--chef-line) !important;
-    border-radius: 22px !important;
+    border-radius: 20px !important;
     background: var(--chef-paper) !important;
     box-shadow: var(--chef-shadow);
 }
 
 .control-panel {
+    gap: 14px !important;
     padding: 22px !important;
 }
 
 .output-panel {
-    min-height: 410px;
-    padding: 24px 26px !important;
+    min-height: 440px;
+    gap: 12px !important;
+    padding: 22px 26px 26px !important;
 }
 
 .panel-label {
-    margin: 0 0 15px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 0 0 2px;
     color: var(--chef-muted);
-    font-size: 0.73rem;
-    font-weight: 750;
-    letter-spacing: 0.12em;
+    font-size: 0.69rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
 }
 
+.panel-label::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--chef-orange);
+    box-shadow: 0 0 0 4px rgba(231, 101, 43, 0.10);
+}
+
+.output-panel .panel-label::before {
+    background: #3a9b6d;
+    box-shadow: 0 0 0 4px rgba(58, 155, 109, 0.11);
+}
+
+.section-divider {
+    margin: 4px 0 0;
+    padding-top: 15px;
+    border-top: 1px solid var(--chef-line);
+}
+
+.section-title {
+    color: #30463b;
+    font-size: 0.76rem;
+    font-weight: 780;
+}
+
+.field-grid,
+.triple-grid {
+    gap: 12px !important;
+    align-items: end;
+}
+
+.field-grid > div,
+.triple-grid > div {
+    min-width: 0 !important;
+}
+
 .field-note {
-    margin: -4px 2px 12px;
+    margin: -6px 2px 0;
     color: #7a857f;
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     line-height: 1.45;
 }
 
-.control-panel .form,
-.control-panel .wrap,
+.control-panel label > span,
+.control-panel .label-wrap span {
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #3b4e45 !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+}
+
+.control-panel .label-wrap,
+.control-panel .block-label {
+    padding: 0 0 7px !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: #3b4e45 !important;
+}
+
+.control-panel .html-container,
+.output-panel .html-container {
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+.control-panel .block:has(.panel-label),
+.output-panel .block:has(.panel-label),
+.control-panel .block:has(.field-note) {
+    min-height: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+.output-panel .block,
+.output-panel .prose,
+.output-panel .markdown {
+    border-color: transparent !important;
+    background: transparent !important;
+}
+
+.control-panel table,
+.control-panel table tbody,
+.control-panel table tr,
+.control-panel table td {
+    border: 0 !important;
+    background: transparent !important;
+}
+
+.control-panel table button {
+    border: 1px solid var(--chef-line) !important;
+    border-radius: 9px !important;
+    background: var(--chef-sage) !important;
+    color: #3c5146 !important;
+    font-size: 0.74rem !important;
+}
+
 .control-panel input,
-.control-panel textarea {
-    background: #fffdf8 !important;
-    border-color: rgba(39, 61, 51, 0.15) !important;
+.control-panel textarea,
+.control-panel [role="listbox"] {
+    background: #fffefa !important;
+    border-color: rgba(27, 57, 44, 0.18) !important;
     color: var(--chef-ink) !important;
 }
 
+.control-panel input:focus,
+.control-panel textarea:focus {
+    border-color: var(--chef-forest-2) !important;
+    box-shadow: 0 0 0 3px rgba(36, 90, 69, 0.11) !important;
+}
+
+.action-row {
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-top: 3px;
+    padding-top: 16px;
+    border-top: 1px solid var(--chef-line);
+}
+
 .primary-action {
-    min-height: 48px !important;
-    margin-top: 8px !important;
+    flex: 1 1 auto !important;
+    min-height: 50px !important;
     border: 0 !important;
-    border-radius: 13px !important;
+    border-radius: 12px !important;
     background: var(--chef-orange) !important;
     color: #fff !important;
-    font-weight: 750 !important;
-    box-shadow: 0 10px 22px rgba(232, 111, 50, 0.24) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.005em;
+    box-shadow: 0 10px 22px rgba(231, 101, 43, 0.23) !important;
     transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
 }
 
 .primary-action:hover {
     transform: translateY(-1px);
     background: var(--chef-orange-dark) !important;
-    box-shadow: 0 13px 26px rgba(201, 84, 34, 0.27) !important;
+    box-shadow: 0 13px 26px rgba(200, 78, 29, 0.27) !important;
+}
+
+.secondary-action {
+    flex: 0 0 108px !important;
+    min-width: 108px !important;
+    min-height: 50px !important;
+    border: 1px solid var(--chef-line-strong) !important;
+    border-radius: 12px !important;
+    background: #f8f6ef !important;
+    color: #4e5d55 !important;
+    font-weight: 700 !important;
+}
+
+.secondary-action:hover {
+    border-color: rgba(27, 57, 44, 0.32) !important;
+    background: var(--chef-sage) !important;
+    color: var(--chef-forest) !important;
+}
+
+.solo-action {
+    width: 100% !important;
+    margin-top: 4px;
+}
+
+.chef-examples {
+    margin-top: 0;
+    border: 1px solid var(--chef-line) !important;
+    border-radius: 13px !important;
+    background: #faf8f2 !important;
+}
+
+.chef-examples button {
+    border-radius: 9px !important;
+    font-size: 0.76rem !important;
+}
+
+.chef-accordion {
+    border: 1px solid var(--chef-line) !important;
+    border-radius: 14px !important;
+    background: #faf8f2 !important;
+}
+
+.chef-accordion > button {
+    color: #354b40 !important;
+    font-size: 0.8rem !important;
+    font-weight: 750 !important;
 }
 
 .recipe-output {
+    min-height: 330px;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
     color: var(--chef-ink);
     line-height: 1.65;
 }
@@ -1137,68 +1501,287 @@ body,
 }
 
 .empty-state {
-    display: flex;
-    min-height: 330px;
+    display: grid;
+    min-height: 320px;
+    place-content: center;
     align-items: center;
     justify-content: center;
+    padding: 32px;
+    border: 1px dashed var(--chef-line-strong);
+    border-radius: 16px;
+    background: linear-gradient(145deg, rgba(232, 239, 233, 0.62), rgba(255, 254, 250, 0.72));
     text-align: center;
     color: #7b8780;
 }
 
+.empty-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    margin: 0 auto 13px;
+    border: 1px solid var(--chef-line);
+    border-radius: 16px;
+    background: var(--chef-sage);
+    color: var(--chef-forest);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.empty-state strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #3a4d43;
+    font-size: 0.94rem;
+}
+
+.empty-state span {
+    display: block;
+    max-width: 360px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
 .browse-status {
     min-height: 0 !important;
-    margin-bottom: 8px;
+    margin: 0 0 5px;
+    padding: 8px 11px;
+    border-radius: 10px;
+    background: var(--chef-sage);
     color: var(--chef-muted);
-    font-size: 0.83rem;
+    font-size: 0.78rem;
+}
+
+.download-row {
+    gap: 12px !important;
+    margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1px solid var(--chef-line);
+}
+
+.download-row > div,
+.recipe-download {
+    min-width: 0 !important;
+}
+
+.download-row .file-preview,
+.recipe-download .file-preview {
+    border: 1px dashed var(--chef-line-strong) !important;
+    border-radius: 12px !important;
+    background: #faf8f2 !important;
 }
 
 #chef-footer {
-    margin-top: 22px;
-    padding: 18px 4px 0;
+    margin-top: 26px;
+    padding: 20px 4px 0;
     border-top: 1px solid var(--chef-line);
     color: var(--chef-muted);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     line-height: 1.6;
     text-align: center;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1040px) {
+    #chef-hero {
+        grid-template-columns: minmax(0, 1fr) 290px;
+        gap: 28px;
+        padding: 40px 38px;
+    }
+
+    .hero-title {
+        font-size: clamp(2.45rem, 6vw, 3.8rem);
+    }
+
+    .gradio-container .tab-nav,
+    .gradio-container [role="tablist"] {
+        display: flex;
+        overflow-x: auto;
+        justify-content: flex-start;
+        scrollbar-width: thin;
+    }
+
+    .gradio-container .tab-nav button,
+    .gradio-container [role="tablist"] [role="tab"] {
+        flex: 0 0 auto;
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 780px) {
     .gradio-container {
         padding: 12px 12px 32px !important;
     }
 
+    #chef-app-bar {
+        min-height: auto;
+        align-items: flex-start;
+        padding: 4px 2px 8px;
+    }
+
+    .model-badge {
+        display: none;
+    }
+
     #chef-hero {
-        padding: 30px 24px 28px;
-        border-radius: 22px;
+        display: block;
+        padding: 32px 24px 24px;
+        border-radius: 21px;
     }
 
     .hero-title {
-        font-size: 2.65rem;
+        font-size: clamp(2.35rem, 12vw, 3.15rem);
+        line-height: 1.02;
     }
 
     .hero-copy {
-        font-size: 0.96rem;
+        margin-top: 16px;
+        font-size: 0.92rem;
     }
 
-    #chef-workspace > .tab-nav {
-        overflow-x: auto;
-        flex-wrap: nowrap;
-        justify-content: flex-start;
+    .hero-command {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+        margin-top: 24px;
+        padding: 9px;
+        border-radius: 15px;
     }
 
-    #chef-workspace > .tab-nav button {
-        flex: 0 0 auto;
-        white-space: nowrap;
+    .command-kicker,
+    .command-copy {
+        display: none;
+    }
+
+    .command-item,
+    .command-item:first-of-type {
+        display: block;
+        padding: 10px 7px;
+        border: 0;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.06);
+        text-align: center;
+    }
+
+    .command-index {
+        margin: 0 auto 7px;
+    }
+
+    .command-title {
+        font-size: 0.7rem;
+    }
+
+    .gradio-container .tab-nav,
+    .gradio-container [role="tablist"] {
+        top: 5px;
+        margin-bottom: 18px;
+    }
+
+    .gradio-container .tab-nav button,
+    .gradio-container [role="tablist"] [role="tab"] {
+        min-width: 130px;
+        min-height: 43px;
+        font-size: 0.76rem;
+    }
+
+    .tool-heading {
+        grid-template-columns: 45px minmax(0, 1fr);
+        gap: 12px;
+        margin-bottom: 17px;
+    }
+
+    .tool-number {
+        width: 43px;
+        height: 43px;
+        border-radius: 13px;
+        font-size: 1rem;
+    }
+
+    .tool-title {
+        font-size: 1.65rem;
+    }
+
+    .tool-description {
+        font-size: 0.83rem;
     }
 
     .control-panel,
     .output-panel {
-        border-radius: 18px !important;
+        border-radius: 17px !important;
+        padding: 18px !important;
+    }
+
+    .workspace-grid {
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .workspace-grid > div {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
     }
 
     .output-panel {
         min-height: 300px;
-        padding: 20px !important;
+    }
+
+    .recipe-output,
+    .empty-state {
+        min-height: 250px;
+    }
+
+    .action-row {
+        flex-wrap: nowrap !important;
+    }
+
+    .secondary-action {
+        flex-basis: 90px !important;
+        min-width: 90px !important;
+    }
+
+    .download-row {
+        flex-direction: column !important;
+    }
+}
+
+@media (max-width: 540px) {
+    .brand-subtitle,
+    #system-note {
+        display: none;
+    }
+
+    .privacy-badge {
+        padding-inline: 10px;
+        font-size: 0.69rem;
+    }
+
+    #chef-hero {
+        padding: 28px 20px 20px;
+    }
+
+    .hero-eyebrow {
+        margin-bottom: 13px;
+        font-size: 0.66rem;
+    }
+
+    .hero-command {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 20px;
+    }
+
+    .field-grid,
+    .triple-grid {
+        flex-direction: column !important;
+    }
+
+    .action-row {
+        flex-direction: column !important;
+    }
+
+    .secondary-action {
+        flex: 1 1 auto !important;
+        width: 100% !important;
     }
 }
 """
@@ -1208,25 +1791,48 @@ def build_demo() -> gr.Blocks:
     model_name = Path(GENERATION_MODEL or BASE_MODEL).name
     adapter_label = "fine-tuned LoRA active" if not GENERATION_MODEL else "local checkpoint"
     hero = f"""
+    <div id="chef-app-bar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true">CA</div>
+        <div>
+          <div class="brand-name">Chef's Assistant</div>
+          <div class="brand-subtitle">Recipe intelligence and menu operations</div>
+        </div>
+      </div>
+      <div class="top-status" aria-label="Application status">
+        <span class="model-badge">{html.escape(model_name)}</span>
+        <span class="privacy-badge">Local workspace</span>
+      </div>
+    </div>
     <header id="chef-hero">
       <div class="hero-content">
-        <div class="hero-eyebrow">Private local AI kitchen</div>
-        <h1 class="hero-title">Cook with confidence,<br>plan with intelligence.</h1>
+        <div class="hero-eyebrow">Your digital kitchen desk</div>
+        <h1 class="hero-title">From first idea<br>to final service.</h1>
         <p class="hero-copy">
-          Search a large recipe collection, create dishes around your requirements,
-          and turn everyday ingredients into practical menus—all from one workspace.
+          Search the full recipe library, develop dishes around real constraints,
+          and assemble practical menus in one focused chef workspace.
         </p>
       </div>
-      <div class="hero-stats" aria-label="Application status">
-        <span class="status-pill"><strong>Complete</strong> indexed recipe catalog</span>
-        <span class="status-pill"><strong>{html.escape(model_name)}</strong> model</span>
-        <span class="status-pill"><strong>Local</strong> &amp; private</span>
-      </div>
+      <aside class="hero-command" aria-label="Chef workflow">
+        <div class="command-kicker">One connected workflow</div>
+        <div class="command-item">
+          <div class="command-index">01</div>
+          <div><div class="command-title">Discover</div><div class="command-copy">Search and browse grounded recipes.</div></div>
+        </div>
+        <div class="command-item">
+          <div class="command-index">02</div>
+          <div><div class="command-title">Create</div><div class="command-copy">Develop a recipe with local AI.</div></div>
+        </div>
+        <div class="command-item">
+          <div class="command-index">03</div>
+          <div><div class="command-title">Plan</div><div class="command-copy">Build service-ready menus and lists.</div></div>
+        </div>
+      </aside>
     </header>
     """
     system_note = (
-        f"Dataset: {html.escape(DATASET_PATH.name)} · {html.escape(adapter_label)} · "
-        f"adapter scale {LORA_SCALE:g} · AI loads on first use"
+        f"Dataset: {html.escape(DATASET_PATH.name)} &middot; {html.escape(adapter_label)} &middot; "
+        f"adapter scale {LORA_SCALE:g} &middot; AI loads only when generation is requested"
     )
 
     with gr.Blocks(
@@ -1239,13 +1845,16 @@ def build_demo() -> gr.Blocks:
         gr.HTML(f'<div id="system-note">{system_note}</div>', padding=False)
 
         with gr.Tabs(elem_id="chef-workspace"):
-            with gr.Tab("Search recipes"):
+            with gr.Tab("01 · Find recipes"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
-                      <div class="tool-kicker">Discover</div>
-                      <h2 class="tool-title">Find the right recipe, faster.</h2>
-                      <p class="tool-description">Describe what you want in natural language. The dataset supplies grounded candidates and the local Llama model ranks the closest matches.</p>
+                      <div class="tool-number">01</div>
+                      <div class="tool-heading-copy">
+                        <div class="tool-kicker">Recipe search</div>
+                        <h2 class="tool-title">Find the right recipe, faster.</h2>
+                        <p class="tool-description">Describe the dish, ingredient, cuisine, or service constraint. The complete indexed collection returns grounded matches in seconds.</p>
+                      </div>
                     </section>
                     """,
                     padding=False,
@@ -1263,19 +1872,24 @@ def build_demo() -> gr.Blocks:
                                 '<p class="field-note">Try a cuisine, main ingredient, cooking style, or time limit.</p>',
                                 padding=False,
                             )
-                            result_count = gr.Slider(
-                                1, 10, value=5, step=1, label="Number of matches"
+                            with gr.Row(elem_classes="field-grid"):
+                                result_count = gr.Slider(
+                                    1, 10, value=5, step=1, label="Matches"
+                                )
+                                search_minutes = gr.Slider(
+                                    0,
+                                    240,
+                                    value=0,
+                                    step=15,
+                                    label="Max time",
+                                )
+                            gr.HTML(
+                                '<p class="field-note">Set max time to 0 when there is no service-time limit.</p>',
+                                padding=False,
                             )
                             search_dietary = gr.Textbox(
                                 label="Dietary and allergen filters",
                                 placeholder="Halal, vegetarian, no peanuts",
-                            )
-                            search_minutes = gr.Slider(
-                                0,
-                                240,
-                                value=0,
-                                step=15,
-                                label="Maximum time (0 = any)",
                             )
                             gr.Examples(
                                 examples=[
@@ -1286,18 +1900,22 @@ def build_demo() -> gr.Blocks:
                                 inputs=search_query,
                                 label="Chef shortcuts",
                             )
-                            with gr.Row():
+                            with gr.Row(elem_classes="action-row"):
                                 search_button = gr.Button(
-                                    "Find matching recipes  →",
+                                    "Find matching recipes →",
                                     variant="primary",
                                     elem_classes="primary-action",
                                 )
-                                search_cancel = gr.Button("Cancel", variant="secondary")
+                                search_cancel = gr.Button(
+                                    "Cancel",
+                                    variant="secondary",
+                                    elem_classes="secondary-action",
+                                )
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Recommended matches</div>', padding=False)
                             search_output = gr.Markdown(
-                                "<div class='empty-state'>Your best recipe matches will appear here.</div>",
+                                "<div class='empty-state'><div class='empty-icon'>01</div><strong>Ready to search</strong><span>Your best recipe matches will appear here, ranked around the brief and filters.</span></div>",
                                 elem_classes="recipe-output",
                             )
                 search_event = search_button.click(
@@ -1315,13 +1933,16 @@ def build_demo() -> gr.Blocks:
                     cancels=[search_event, search_submit_event],
                 )
 
-            with gr.Tab("Surprise me"):
+            with gr.Tab("02 · Surprise me"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
-                      <div class="tool-kicker">Inspiration</div>
-                      <h2 class="tool-title">Let the kitchen choose.</h2>
-                      <p class="tool-description">Pick a collection and discover a complete recipe at random—useful when you want inspiration without another decision.</p>
+                      <div class="tool-number">02</div>
+                      <div class="tool-heading-copy">
+                        <div class="tool-kicker">Kitchen inspiration</div>
+                        <h2 class="tool-title">Let the kitchen choose.</h2>
+                        <p class="tool-description">Choose a collection and draw one complete recipe at random—ideal when the team needs a fresh direction without another meeting.</p>
+                      </div>
                     </section>
                     """,
                     padding=False,
@@ -1336,26 +1957,29 @@ def build_demo() -> gr.Blocks:
                                 label="Recipe category",
                             )
                             random_button = gr.Button(
-                                "Pick a recipe  →",
+                                "Pick a recipe →",
                                 variant="primary",
-                                elem_classes="primary-action",
+                                elem_classes=["primary-action", "solo-action"],
                             )
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Today\'s discovery</div>', padding=False)
                             random_output = gr.Markdown(
-                                "<div class='empty-state'>Choose a category, then let chance set the menu.</div>",
+                                "<div class='empty-state'><div class='empty-icon'>02</div><strong>Waiting for a category</strong><span>Set the collection, then let chance give the kitchen its next idea.</span></div>",
                                 elem_classes="recipe-output",
                             )
                 random_button.click(random_recipe, inputs=category, outputs=random_output)
 
-            with gr.Tab("Browse collection"):
+            with gr.Tab("03 · Browse library"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
-                      <div class="tool-kicker">Recipe library</div>
-                      <h2 class="tool-title">Explore the collection your way.</h2>
-                      <p class="tool-description">Browse alphabetically, narrow by category, and move through the recipe library one page at a time.</p>
+                      <div class="tool-number">03</div>
+                      <div class="tool-heading-copy">
+                        <div class="tool-kicker">Recipe library</div>
+                        <h2 class="tool-title">Explore the collection your way.</h2>
+                        <p class="tool-description">Browse alphabetically, narrow the category, and move through the indexed catalog one focused page at a time.</p>
+                      </div>
                     </section>
                     """,
                     padding=False,
@@ -1364,28 +1988,29 @@ def build_demo() -> gr.Blocks:
                     with gr.Column(scale=4, min_width=310):
                         with gr.Group(elem_classes="control-panel"):
                             gr.HTML('<div class="panel-label">Library filters</div>', padding=False)
-                            browse_letter = gr.Dropdown(
-                                ["All"] + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-                                value="All",
-                                label="Recipe starts with",
-                            )
-                            browse_category = gr.Dropdown(
-                                ["All", "Chinese", "Western"],
-                                value="All",
-                                label="Category",
-                            )
+                            with gr.Row(elem_classes="field-grid"):
+                                browse_letter = gr.Dropdown(
+                                    ["All"] + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+                                    value="All",
+                                    label="Starts with",
+                                )
+                                browse_category = gr.Dropdown(
+                                    ["All", "Chinese", "Western"],
+                                    value="All",
+                                    label="Category",
+                                )
                             browse_page = gr.Number(value=1, precision=0, label="Page number")
                             browse_button = gr.Button(
-                                "Browse recipes  →",
+                                "Browse recipes →",
                                 variant="primary",
-                                elem_classes="primary-action",
+                                elem_classes=["primary-action", "solo-action"],
                             )
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Recipe collection</div>', padding=False)
                             browse_status = gr.Markdown(elem_classes="browse-status")
                             browse_output = gr.Markdown(
-                                "<div class='empty-state'>Set your filters to open the recipe library.</div>",
+                                "<div class='empty-state'><div class='empty-icon'>03</div><strong>The library is ready</strong><span>Choose a letter, category, and page to begin browsing.</span></div>",
                                 elem_classes="recipe-output",
                             )
                 browse_button.click(
@@ -1394,13 +2019,16 @@ def build_demo() -> gr.Blocks:
                     outputs=[browse_output, browse_status],
                 )
 
-            with gr.Tab("Create a recipe"):
+            with gr.Tab("04 · Create recipe"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
-                      <div class="tool-kicker">AI recipe studio</div>
-                      <h2 class="tool-title">Turn an idea into a complete dish.</h2>
-                      <p class="tool-description">Describe the meal you have in mind. The local model builds a structured recipe and audits it against your cuisine and dietary requirements.</p>
+                      <div class="tool-number">04</div>
+                      <div class="tool-heading-copy">
+                        <div class="tool-kicker">AI recipe studio</div>
+                        <h2 class="tool-title">Turn an idea into a complete dish.</h2>
+                        <p class="tool-description">Write the culinary brief, set the covers and restrictions, then let the local model build and audit a structured recipe.</p>
+                      </div>
                     </section>
                     """,
                     padding=False,
@@ -1428,23 +2056,28 @@ def build_demo() -> gr.Blocks:
                                 inputs=[generation_request, servings, dietary_notes],
                                 label="Service-ready examples",
                             )
-                            with gr.Row():
+                            with gr.Row(elem_classes="action-row"):
                                 generate_button = gr.Button(
-                                    "Create my recipe  →",
+                                    "Create my recipe →",
                                     variant="primary",
                                     elem_classes="primary-action",
                                 )
-                                generation_cancel = gr.Button("Cancel", variant="secondary")
+                                generation_cancel = gr.Button(
+                                    "Cancel",
+                                    variant="secondary",
+                                    elem_classes="secondary-action",
+                                )
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Your generated recipe</div>', padding=False)
                             generation_output = gr.Markdown(
-                                "<div class='empty-state'>Your custom recipe will appear here.</div>",
+                                "<div class='empty-state'><div class='empty-icon'>04</div><strong>Your recipe studio is ready</strong><span>Submit a clear brief to generate ingredients, method, timings, and quality checks.</span></div>",
                                 elem_classes="recipe-output",
                             )
                             recipe_download = gr.File(
                                 label="Download recipe",
                                 interactive=False,
+                                elem_classes="recipe-download",
                             )
                 generation_event = generate_button.click(
                     generate_recipe_ui,
@@ -1453,13 +2086,16 @@ def build_demo() -> gr.Blocks:
                 )
                 generation_cancel.click(fn=None, cancels=[generation_event])
 
-            with gr.Tab("Plan a menu"):
+            with gr.Tab("05 · Plan menu"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
-                      <div class="tool-kicker">Menu planning</div>
-                      <h2 class="tool-title">Build a practical plan for the days ahead.</h2>
-                      <p class="tool-description">Set the schedule, people, budget target, dietary needs, and preferences. The planner selects grounded recipes and prepares one shopping list.</p>
+                      <div class="tool-number">05</div>
+                      <div class="tool-heading-copy">
+                        <div class="tool-kicker">Menu operations</div>
+                        <h2 class="tool-title">Build a practical plan for every service.</h2>
+                        <p class="tool-description">Define the schedule, covers, budget, restrictions, and pantry. The planner selects grounded recipes and consolidates the shopping list.</p>
+                      </div>
                     </section>
                     """,
                     padding=False,
@@ -1468,22 +2104,23 @@ def build_demo() -> gr.Blocks:
                     with gr.Column(scale=5, min_width=330):
                         with gr.Group(elem_classes="control-panel"):
                             gr.HTML('<div class="panel-label">Planning brief</div>', padding=False)
-                            with gr.Row():
+                            with gr.Row(elem_classes="triple-grid"):
                                 menu_days = gr.Slider(1, 7, value=3, step=1, label="Days")
                                 menu_meals = gr.Slider(
                                     1, 3, value=2, step=1, label="Meals per day"
                                 )
-                            menu_servings = gr.Slider(
-                                1, 12, value=4, step=1, label="People"
-                            )
-                            menu_meal_types = gr.CheckboxGroup(
-                                ["Breakfast", "Lunch", "Dinner"],
-                                value=["Lunch", "Dinner"],
-                                label="Service periods",
-                            )
-                            menu_budget = gr.Textbox(
-                                label="Budget target", placeholder="RM150 total"
-                            )
+                                menu_servings = gr.Slider(
+                                    1, 12, value=4, step=1, label="Covers"
+                                )
+                            with gr.Row(elem_classes="field-grid"):
+                                menu_meal_types = gr.CheckboxGroup(
+                                    ["Breakfast", "Lunch", "Dinner"],
+                                    value=["Lunch", "Dinner"],
+                                    label="Service periods",
+                                )
+                                menu_budget = gr.Textbox(
+                                    label="Budget target", placeholder="RM150 total"
+                                )
                             menu_dietary = gr.Textbox(
                                 label="Dietary requirements",
                                 placeholder="Halal, no peanuts",
@@ -1493,23 +2130,29 @@ def build_demo() -> gr.Blocks:
                                 lines=3,
                                 placeholder="Malaysian and Chinese dishes; quick family-style meals",
                             )
-                            menu_available = gr.Textbox(
-                                label="Ingredients already available",
-                                placeholder="Chicken, rice, carrots, cabbage",
-                            )
-                            menu_pantry = gr.Textbox(
-                                label="Pantry items to exclude from shopping",
-                                placeholder="Salt, pepper, cooking oil, soy sauce",
-                            )
-                            with gr.Row():
-                                menu_no_repeats = gr.Checkbox(
-                                    value=True,
-                                    label="Avoid repeated dishes",
-                                )
-                                menu_leftovers = gr.Checkbox(
-                                    value=False,
-                                    label="Plan safe leftovers",
-                                )
+                            with gr.Accordion(
+                                "Pantry, stock and planning rules",
+                                open=False,
+                                elem_classes="chef-accordion",
+                            ):
+                                with gr.Row(elem_classes="field-grid"):
+                                    menu_available = gr.Textbox(
+                                        label="Ingredients already available",
+                                        placeholder="Chicken, rice, carrots, cabbage",
+                                    )
+                                    menu_pantry = gr.Textbox(
+                                        label="Exclude from shopping list",
+                                        placeholder="Salt, pepper, cooking oil, soy sauce",
+                                    )
+                                with gr.Row(elem_classes="field-grid"):
+                                    menu_no_repeats = gr.Checkbox(
+                                        value=True,
+                                        label="Avoid repeated dishes",
+                                    )
+                                    menu_leftovers = gr.Checkbox(
+                                        value=False,
+                                        label="Plan safe leftovers",
+                                    )
                             gr.Examples(
                                 examples=[
                                     ["Malaysian weeknight menu"],
@@ -1519,21 +2162,25 @@ def build_demo() -> gr.Blocks:
                                 inputs=menu_preferences,
                                 label="Menu brief examples",
                             )
-                            with gr.Row():
+                            with gr.Row(elem_classes="action-row"):
                                 menu_button = gr.Button(
-                                    "Create menu plan  →",
+                                    "Create menu plan →",
                                     variant="primary",
                                     elem_classes="primary-action",
                                 )
-                                menu_cancel = gr.Button("Cancel", variant="secondary")
+                                menu_cancel = gr.Button(
+                                    "Cancel",
+                                    variant="secondary",
+                                    elem_classes="secondary-action",
+                                )
                     with gr.Column(scale=7, min_width=380):
                         with gr.Group(elem_classes="output-panel"):
                             gr.HTML('<div class="panel-label">Menu and shopping list</div>', padding=False)
                             menu_output = gr.Markdown(
-                                "<div class='empty-state'>Your menu plan and consolidated shopping list will appear here.</div>",
+                                "<div class='empty-state'><div class='empty-icon'>05</div><strong>Ready for the planning brief</strong><span>Your service schedule, selected recipes, leftovers, and consolidated shopping list will appear here.</span></div>",
                                 elem_classes="recipe-output",
                             )
-                            with gr.Row():
+                            with gr.Row(elem_classes="download-row"):
                                 menu_csv_download = gr.File(
                                     label="Download kitchen CSV", interactive=False
                                 )
