@@ -392,11 +392,11 @@ def _render_generated_recipe(
     lines = [
         f"## {html.escape(_safe_text(recipe.get('name')) or 'Generated recipe')}",
         "",
-        f"**Quality score: {score}/100** · {status}",
+        f"**Quality score: {score}/100** - {status}",
         "",
         html.escape(_safe_text(recipe.get("description"))),
         "",
-        f"**Servings:** {html.escape(_safe_text(recipe.get('servings')))} · "
+        f"**Servings:** {html.escape(_safe_text(recipe.get('servings')))} - "
         f"**Total time:** {html.escape(_safe_text(recipe.get('minutes')))} minutes",
         "",
         "### Ingredients",
@@ -557,7 +557,7 @@ def browse_recipes(letter: str, category: str, page: int) -> tuple[str, str]:
         content = "\n\n---\n\n".join(
             _recipe_markdown(row) for _, row in page_frame.iterrows()
         )
-        return content, f"Page {current_page:,} of {total_pages:,} · {total:,} recipes"
+        return content, f"Page {current_page:,} of {total_pages:,} - {total:,} recipes"
     except Exception as exc:
         return f"### Browse unavailable\n\n{html.escape(str(exc))}", ""
 
@@ -685,7 +685,7 @@ def create_menu_plan(
     lines = [
         "# Kitchen Menu Plan",
         "",
-        f"For **{int(servings)} people** · **{int(days)} days** · "
+        f"For **{int(servings)} people** - **{int(days)} days** - "
         f"Budget target: **{html.escape(_safe_text(budget) or 'not specified')}**",
         "",
     ]
@@ -701,7 +701,7 @@ def create_menu_plan(
             name_text = _safe_text(row["name"]).title()
             ingredients = _parse_list(row.get("ingredients"))
             steps = _parse_list(row.get("steps"))
-            heading = f"{meal_label} — {'Leftovers: ' if is_leftover else ''}{name_text}"
+            heading = f"{meal_label} - {'Leftovers: ' if is_leftover else ''}{name_text}"
             lines.append(f"### {html.escape(heading)}")
             if is_leftover:
                 lines.extend(
@@ -1784,6 +1784,636 @@ body {
         width: 100% !important;
     }
 }
+
+/* Contrast-safe chef workspace refresh.
+   This block intentionally comes last so it can normalize Gradio's light/dark
+   defaults and keep every control readable in both color schemes. */
+:root {
+    color-scheme: light dark;
+    --chef-canvas: #f6f8f7;
+    --chef-canvas-2: #eef3f1;
+    --chef-surface: #ffffff;
+    --chef-surface-soft: #edf5f2;
+    --chef-surface-strong: #dfeae6;
+    --chef-ink: #15201c;
+    --chef-heading: #0e332e;
+    --chef-muted: #4f625c;
+    --chef-muted-strong: #344841;
+    --chef-line: rgba(33, 61, 53, 0.18);
+    --chef-line-strong: rgba(33, 61, 53, 0.31);
+    --chef-primary: #0f766e;
+    --chef-primary-hover: #0b5f58;
+    --chef-primary-soft: #d9f3ee;
+    --chef-accent: #b83252;
+    --chef-accent-soft: #fde8ee;
+    --chef-gold: #b7791f;
+    --chef-on-primary: #ffffff;
+    --chef-shadow-sm: 0 8px 22px rgba(19, 36, 31, 0.07);
+    --chef-shadow: 0 18px 46px rgba(19, 36, 31, 0.11);
+}
+
+body,
+.gradio-container {
+    background:
+        linear-gradient(180deg, var(--chef-canvas) 0%, var(--chef-canvas-2) 100%) !important;
+    color: var(--chef-ink) !important;
+}
+
+.gradio-container {
+    --body-background-fill: var(--chef-canvas);
+    --body-background-fill-dark: var(--chef-canvas);
+    --body-text-color: var(--chef-ink);
+    --body-text-color-dark: var(--chef-ink);
+    --body-text-color-subdued: var(--chef-muted);
+    --body-text-color-subdued-dark: var(--chef-muted);
+    --background-fill-primary: var(--chef-surface);
+    --background-fill-primary-dark: var(--chef-surface);
+    --background-fill-secondary: var(--chef-canvas-2);
+    --background-fill-secondary-dark: var(--chef-canvas-2);
+    --block-background-fill: var(--chef-surface);
+    --block-background-fill-dark: var(--chef-surface);
+    --block-border-color: var(--chef-line);
+    --block-border-color-dark: var(--chef-line);
+    --block-info-text-color: var(--chef-muted);
+    --block-info-text-color-dark: var(--chef-muted);
+    --block-label-background-fill: transparent;
+    --block-label-background-fill-dark: transparent;
+    --block-label-text-color: var(--chef-muted-strong);
+    --block-label-text-color-dark: var(--chef-muted-strong);
+    --block-title-text-color: var(--chef-heading);
+    --block-title-text-color-dark: var(--chef-heading);
+    --border-color-primary: var(--chef-line);
+    --border-color-primary-dark: var(--chef-line);
+    --input-background-fill: var(--chef-surface);
+    --input-background-fill-dark: var(--chef-surface);
+    --input-border-color: var(--chef-line-strong);
+    --input-border-color-dark: var(--chef-line-strong);
+    --input-placeholder-color: color-mix(in srgb, var(--chef-muted) 72%, transparent);
+    --input-placeholder-color-dark: color-mix(in srgb, var(--chef-muted) 72%, transparent);
+    --link-text-color: var(--chef-primary);
+    --link-text-color-dark: var(--chef-primary);
+    max-width: 1360px !important;
+    padding: 16px 24px 46px !important;
+    font-size: 16px !important;
+}
+
+#chef-app-bar {
+    min-height: 58px;
+    margin-bottom: 12px;
+    padding: 8px 2px;
+}
+
+.brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--chef-heading);
+    color: #ffffff;
+    box-shadow: var(--chef-shadow-sm);
+    font-size: 1rem;
+    letter-spacing: 0 !important;
+}
+
+.brand-name {
+    color: var(--chef-heading);
+    font-size: 1rem;
+    letter-spacing: 0 !important;
+}
+
+.brand-subtitle,
+.model-badge,
+.privacy-badge,
+#system-note,
+.tool-description,
+.field-note,
+#chef-footer {
+    color: var(--chef-muted) !important;
+}
+
+.privacy-badge,
+.model-badge {
+    border-color: var(--chef-line);
+    background: color-mix(in srgb, var(--chef-surface) 90%, transparent);
+    color: var(--chef-muted-strong) !important;
+}
+
+.privacy-badge::before {
+    background: #16a34a;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #16a34a 18%, transparent);
+}
+
+#chef-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+    gap: 26px;
+    margin-bottom: 12px;
+    padding: 28px 30px;
+    border: 1px solid var(--chef-line);
+    border-radius: 18px;
+    background:
+        linear-gradient(135deg, color-mix(in srgb, var(--chef-heading) 96%, #000000 4%), #17483f 58%, #5a2440 130%) !important;
+    box-shadow: var(--chef-shadow);
+    color: #f7fffc;
+}
+
+#chef-hero::before,
+#chef-hero::after {
+    display: none;
+}
+
+.hero-eyebrow,
+.command-kicker,
+.tool-kicker,
+.panel-label {
+    letter-spacing: 0 !important;
+}
+
+.hero-eyebrow {
+    margin-bottom: 10px;
+    color: #bff3e9;
+    font-size: 0.8rem;
+}
+
+.hero-title {
+    max-width: 720px;
+    color: #ffffff;
+    font-size: 2.55rem;
+    line-height: 1.08;
+    letter-spacing: 0 !important;
+}
+
+.hero-copy {
+    max-width: 720px;
+    margin-top: 14px;
+    color: #dcece7;
+    font-size: 1rem;
+    line-height: 1.55;
+}
+
+.hero-command {
+    display: grid;
+    gap: 8px;
+    align-self: stretch;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.10);
+    backdrop-filter: blur(10px);
+}
+
+.command-kicker {
+    margin: 0 0 2px;
+    color: #bff3e9;
+    font-size: 0.75rem;
+}
+
+.command-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.command-item:first-of-type {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.command-index {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(191, 243, 233, 0.16);
+    color: #cffff6;
+}
+
+.command-title {
+    color: #ffffff;
+    font-size: 0.88rem;
+}
+
+.command-copy {
+    color: #d2e3dd;
+    font-size: 0.78rem;
+}
+
+#system-note {
+    margin: 10px 0 18px;
+    border-color: var(--chef-line);
+    background: var(--chef-surface);
+    font-size: 0.82rem;
+    box-shadow: var(--chef-shadow-sm);
+}
+
+.gradio-container .tab-nav,
+.gradio-container [role="tablist"] {
+    top: 8px;
+    gap: 6px;
+    margin-bottom: 20px;
+    border-color: var(--chef-line);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--chef-surface) 94%, transparent);
+    box-shadow: var(--chef-shadow-sm);
+}
+
+.gradio-container .tab-nav button,
+.gradio-container [role="tablist"] [role="tab"] {
+    min-height: 44px;
+    border-radius: 8px !important;
+    color: var(--chef-muted-strong) !important;
+    font-size: 0.86rem;
+    font-weight: 760;
+    letter-spacing: 0 !important;
+}
+
+.gradio-container .tab-nav button.selected,
+.gradio-container [role="tablist"] [role="tab"][aria-selected="true"] {
+    background: var(--chef-primary) !important;
+    color: var(--chef-on-primary) !important;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--chef-primary) 28%, transparent);
+}
+
+.gradio-container .tab-nav button:not(.selected):hover,
+.gradio-container [role="tablist"] [role="tab"]:not([aria-selected="true"]):hover {
+    background: var(--chef-primary-soft) !important;
+    color: var(--chef-heading) !important;
+}
+
+.tool-heading {
+    grid-template-columns: 54px minmax(0, 1fr);
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.tool-number {
+    width: 48px;
+    height: 48px;
+    border-color: var(--chef-line);
+    border-radius: 12px;
+    background: var(--chef-surface);
+    color: var(--chef-accent);
+    box-shadow: var(--chef-shadow-sm);
+}
+
+.tool-kicker {
+    color: var(--chef-primary) !important;
+    font-size: 0.76rem;
+}
+
+.tool-title {
+    color: var(--chef-heading);
+    font-size: 2rem;
+    line-height: 1.15;
+    letter-spacing: 0 !important;
+}
+
+.tool-description {
+    font-size: 0.95rem;
+}
+
+.workspace-grid {
+    gap: 18px;
+}
+
+.control-panel,
+.output-panel {
+    border-color: var(--chef-line) !important;
+    border-radius: 12px !important;
+    background: var(--chef-surface) !important;
+    box-shadow: var(--chef-shadow-sm);
+}
+
+.control-panel {
+    padding: 20px !important;
+}
+
+.output-panel {
+    min-height: 420px;
+    padding: 20px 22px 24px !important;
+}
+
+.panel-label {
+    color: var(--chef-muted-strong) !important;
+    font-size: 0.76rem;
+}
+
+.panel-label::before {
+    background: var(--chef-accent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--chef-accent) 14%, transparent);
+}
+
+.output-panel .panel-label::before {
+    background: var(--chef-primary);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--chef-primary) 14%, transparent);
+}
+
+.section-title,
+.control-panel label > span,
+.control-panel .label-wrap span,
+.control-panel .label-wrap,
+.control-panel .block-label {
+    color: var(--chef-muted-strong) !important;
+    font-size: 0.84rem !important;
+    font-weight: 760 !important;
+    letter-spacing: 0 !important;
+}
+
+.field-note {
+    font-size: 0.8rem;
+}
+
+.control-panel .block,
+.control-panel .form,
+.output-panel .block,
+.output-panel .prose,
+.output-panel .markdown {
+    color: var(--chef-ink) !important;
+}
+
+.control-panel input,
+.control-panel textarea,
+.control-panel select,
+.control-panel [role="listbox"],
+.control-panel [data-testid="textbox"],
+.control-panel [data-testid="number-input"] {
+    border-color: var(--chef-line-strong) !important;
+    background: var(--chef-surface) !important;
+    color: var(--chef-ink) !important;
+    font-size: 0.95rem !important;
+}
+
+.control-panel input::placeholder,
+.control-panel textarea::placeholder {
+    color: color-mix(in srgb, var(--chef-muted) 74%, transparent) !important;
+    opacity: 1 !important;
+}
+
+.control-panel input:focus,
+.control-panel textarea:focus,
+.control-panel button:focus-visible,
+.gradio-container [role="tab"]:focus-visible {
+    border-color: var(--chef-primary) !important;
+    outline: 3px solid color-mix(in srgb, var(--chef-primary) 22%, transparent) !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+}
+
+.control-panel table button,
+.chef-examples button {
+    border-color: var(--chef-line) !important;
+    background: var(--chef-surface-soft) !important;
+    color: var(--chef-muted-strong) !important;
+    font-size: 0.8rem !important;
+}
+
+.chef-accordion,
+.chef-examples,
+.download-row .file-preview,
+.recipe-download .file-preview {
+    border-color: var(--chef-line) !important;
+    background: var(--chef-surface-soft) !important;
+}
+
+.chef-accordion > button {
+    color: var(--chef-heading) !important;
+    font-size: 0.86rem !important;
+}
+
+.action-row,
+.download-row {
+    border-top-color: var(--chef-line);
+}
+
+.primary-action {
+    min-height: 48px !important;
+    border-radius: 9px !important;
+    background: var(--chef-primary) !important;
+    color: var(--chef-on-primary) !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0 !important;
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--chef-primary) 24%, transparent) !important;
+}
+
+.primary-action:hover {
+    background: var(--chef-primary-hover) !important;
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--chef-primary-hover) 28%, transparent) !important;
+}
+
+.secondary-action {
+    min-height: 48px !important;
+    border-color: var(--chef-line-strong) !important;
+    border-radius: 9px !important;
+    background: var(--chef-surface-soft) !important;
+    color: var(--chef-muted-strong) !important;
+    font-size: 0.95rem !important;
+}
+
+.secondary-action:hover {
+    background: var(--chef-surface-strong) !important;
+    color: var(--chef-heading) !important;
+}
+
+.recipe-output {
+    color: var(--chef-ink) !important;
+    font-size: 0.98rem;
+}
+
+.recipe-output :where(p, li, span, div) {
+    color: var(--chef-ink) !important;
+}
+
+.recipe-output :where(h1, h2, h3, strong) {
+    color: var(--chef-heading) !important;
+    letter-spacing: 0 !important;
+}
+
+.recipe-output a {
+    color: var(--chef-primary) !important;
+}
+
+.recipe-output blockquote {
+    border-left-color: var(--chef-accent) !important;
+    background: var(--chef-accent-soft);
+    color: var(--chef-muted-strong) !important;
+}
+
+.empty-state {
+    border-color: var(--chef-line-strong);
+    background: linear-gradient(145deg, var(--chef-surface-soft), var(--chef-surface));
+    color: var(--chef-muted) !important;
+}
+
+.empty-icon {
+    border-color: var(--chef-line);
+    background: var(--chef-primary-soft);
+    color: var(--chef-primary-hover);
+}
+
+.empty-state strong {
+    color: var(--chef-heading) !important;
+}
+
+.empty-state span,
+.browse-status {
+    color: var(--chef-muted) !important;
+}
+
+.browse-status {
+    background: var(--chef-surface-soft);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --chef-canvas: #101614;
+        --chef-canvas-2: #131d1a;
+        --chef-surface: #1a2521;
+        --chef-surface-soft: #22312c;
+        --chef-surface-strong: #2b3d36;
+        --chef-ink: #edf6f2;
+        --chef-heading: #f7fffc;
+        --chef-muted: #bfd0ca;
+        --chef-muted-strong: #d7e5e0;
+        --chef-line: rgba(221, 239, 232, 0.18);
+        --chef-line-strong: rgba(221, 239, 232, 0.30);
+        --chef-primary: #36d2bd;
+        --chef-primary-hover: #7be7d7;
+        --chef-primary-soft: #193c36;
+        --chef-accent: #ff7b9c;
+        --chef-accent-soft: #40202a;
+        --chef-gold: #f2c15f;
+        --chef-on-primary: #06231f;
+        --chef-shadow-sm: 0 8px 22px rgba(0, 0, 0, 0.26);
+        --chef-shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+    }
+
+    body,
+    .gradio-container {
+        background:
+            linear-gradient(180deg, var(--chef-canvas) 0%, var(--chef-canvas-2) 100%) !important;
+        color: var(--chef-ink) !important;
+    }
+
+    #chef-hero {
+        background: linear-gradient(135deg, #09231f 0%, #123c35 62%, #461f36 125%) !important;
+    }
+}
+
+body.dark,
+body.dark .gradio-container,
+.dark .gradio-container,
+.gradio-container.dark,
+[data-theme="dark"] .gradio-container {
+    --chef-canvas: #101614;
+    --chef-canvas-2: #131d1a;
+    --chef-surface: #1a2521;
+    --chef-surface-soft: #22312c;
+    --chef-surface-strong: #2b3d36;
+    --chef-ink: #edf6f2;
+    --chef-heading: #f7fffc;
+    --chef-muted: #bfd0ca;
+    --chef-muted-strong: #d7e5e0;
+    --chef-line: rgba(221, 239, 232, 0.18);
+    --chef-line-strong: rgba(221, 239, 232, 0.30);
+    --chef-primary: #36d2bd;
+    --chef-primary-hover: #7be7d7;
+    --chef-primary-soft: #193c36;
+    --chef-accent: #ff7b9c;
+    --chef-accent-soft: #40202a;
+    --chef-gold: #f2c15f;
+    --chef-on-primary: #06231f;
+    --chef-shadow-sm: 0 8px 22px rgba(0, 0, 0, 0.26);
+    --chef-shadow: 0 18px 46px rgba(0, 0, 0, 0.36);
+    background:
+        linear-gradient(180deg, var(--chef-canvas) 0%, var(--chef-canvas-2) 100%) !important;
+    color: var(--chef-ink) !important;
+}
+
+@media (max-width: 1040px) {
+    #chef-hero {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 24px;
+    }
+
+    .hero-command {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .command-kicker {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 780px) {
+    .gradio-container {
+        padding: 12px 12px 34px !important;
+        font-size: 15px !important;
+    }
+
+    #chef-hero {
+        padding: 22px;
+        border-radius: 14px;
+    }
+
+    .hero-title {
+        font-size: 1.9rem;
+    }
+
+    .hero-copy {
+        font-size: 0.95rem;
+    }
+
+    .command-copy {
+        display: none;
+    }
+
+    .tool-heading {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .tool-number {
+        width: 40px;
+        height: 40px;
+    }
+
+    .tool-title {
+        font-size: 1.55rem;
+    }
+
+    .control-panel,
+    .output-panel {
+        padding: 16px !important;
+    }
+}
+
+@media (max-width: 540px) {
+    .top-status {
+        align-self: stretch;
+        justify-content: flex-end;
+    }
+
+    #chef-app-bar {
+        gap: 10px;
+    }
+
+    .brand-mark {
+        width: 38px;
+        height: 38px;
+    }
+
+    .hero-command {
+        grid-template-columns: 1fr;
+    }
+
+    .command-kicker,
+    .command-copy {
+        display: block;
+    }
+
+    .gradio-container .tab-nav button,
+    .gradio-container [role="tablist"] [role="tab"] {
+        min-width: 142px;
+    }
+}
 """
 
 
@@ -1845,7 +2475,7 @@ def build_demo() -> gr.Blocks:
         gr.HTML(f'<div id="system-note">{system_note}</div>', padding=False)
 
         with gr.Tabs(elem_id="chef-workspace"):
-            with gr.Tab("01 · Find recipes"):
+            with gr.Tab("01 - Find recipes"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
@@ -1902,7 +2532,7 @@ def build_demo() -> gr.Blocks:
                             )
                             with gr.Row(elem_classes="action-row"):
                                 search_button = gr.Button(
-                                    "Find matching recipes →",
+                                    "Find matching recipes",
                                     variant="primary",
                                     elem_classes="primary-action",
                                 )
@@ -1933,7 +2563,7 @@ def build_demo() -> gr.Blocks:
                     cancels=[search_event, search_submit_event],
                 )
 
-            with gr.Tab("02 · Surprise me"):
+            with gr.Tab("02 - Surprise me"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
@@ -1941,7 +2571,7 @@ def build_demo() -> gr.Blocks:
                       <div class="tool-heading-copy">
                         <div class="tool-kicker">Kitchen inspiration</div>
                         <h2 class="tool-title">Let the kitchen choose.</h2>
-                        <p class="tool-description">Choose a collection and draw one complete recipe at random—ideal when the team needs a fresh direction without another meeting.</p>
+                        <p class="tool-description">Choose a collection and draw one complete recipe at random - ideal when the team needs a fresh direction without another meeting.</p>
                       </div>
                     </section>
                     """,
@@ -1957,7 +2587,7 @@ def build_demo() -> gr.Blocks:
                                 label="Recipe category",
                             )
                             random_button = gr.Button(
-                                "Pick a recipe →",
+                                "Pick a recipe",
                                 variant="primary",
                                 elem_classes=["primary-action", "solo-action"],
                             )
@@ -1970,7 +2600,7 @@ def build_demo() -> gr.Blocks:
                             )
                 random_button.click(random_recipe, inputs=category, outputs=random_output)
 
-            with gr.Tab("03 · Browse library"):
+            with gr.Tab("03 - Browse library"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
@@ -2001,7 +2631,7 @@ def build_demo() -> gr.Blocks:
                                 )
                             browse_page = gr.Number(value=1, precision=0, label="Page number")
                             browse_button = gr.Button(
-                                "Browse recipes →",
+                                "Browse recipes",
                                 variant="primary",
                                 elem_classes=["primary-action", "solo-action"],
                             )
@@ -2019,7 +2649,7 @@ def build_demo() -> gr.Blocks:
                     outputs=[browse_output, browse_status],
                 )
 
-            with gr.Tab("04 · Create recipe"):
+            with gr.Tab("04 - Create recipe"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
@@ -2058,7 +2688,7 @@ def build_demo() -> gr.Blocks:
                             )
                             with gr.Row(elem_classes="action-row"):
                                 generate_button = gr.Button(
-                                    "Create my recipe →",
+                                    "Create my recipe",
                                     variant="primary",
                                     elem_classes="primary-action",
                                 )
@@ -2086,7 +2716,7 @@ def build_demo() -> gr.Blocks:
                 )
                 generation_cancel.click(fn=None, cancels=[generation_event])
 
-            with gr.Tab("05 · Plan menu"):
+            with gr.Tab("05 - Plan menu"):
                 gr.HTML(
                     """
                     <section class="tool-heading">
@@ -2164,7 +2794,7 @@ def build_demo() -> gr.Blocks:
                             )
                             with gr.Row(elem_classes="action-row"):
                                 menu_button = gr.Button(
-                                    "Create menu plan →",
+                                    "Create menu plan",
                                     variant="primary",
                                     elem_classes="primary-action",
                                 )
